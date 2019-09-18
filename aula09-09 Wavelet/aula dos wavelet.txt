@@ -1,0 +1,15 @@
+coeffs = pywt.dwt2(img, 'haar')
+
+LL, (LH, HL, HH) = coeffs
+imagens = [LL,LH,HL,HH]
+titles = ['aproximação (LL),
+	'horizontal detail (LH),
+	'vertical detail (HL)
+	'diagonal detail (HH)]
+
+for i in range(4):
+	plt.subplot(2,2,i+1), plt.imshow(imagens[i], cmap = 'gray')
+	plt.title(title[i], plt.xticks([]), plt.yticks([])
+
+
+
