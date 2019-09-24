@@ -37,13 +37,6 @@ class Example(QWidget):
 
         self.mostrarImagen()
 
-        # if filename:
-        #     with open(filename, "rb") as file:
-        #         data = numpy.array(bytearray(file.read()))
-
-        #         self.image = cv2.imdecode(data, cv2.IMREAD_UNCHANGED)
-        #         self.mostrarImagen()
-
     
     def mostrarImagen(self):
         size = self.image.shape
