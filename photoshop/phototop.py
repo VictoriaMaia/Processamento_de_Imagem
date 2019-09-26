@@ -3,7 +3,7 @@ import cv2
 import numpy
 import os
 
-from PyQt5.QtGui import QImage, QPixmap, QIcon
+from PyQt5.QtGui import QImage, QPixmap, QIcon, QMouseEvent
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
 from PyQt5.QtWidgets import QAction, QMenu, QMainWindow, QToolBar, qApp, QMessageBox
 from PyQt5.QtCore import Qt
@@ -59,10 +59,10 @@ class Example(QWidget):
                 qformat = QImage.Format_RGB888
 
         # ajustar imagem na tela caso ela seja grande demais
-        if(self.sizeImg[1] > 600):
-            self.image = cv2.resize(self.image,(600,self.sizeImg[1]))
         if(self.sizeImg[0] > 600):
-            self.image = cv2.resize(self.image,(self.sizeImg[0], 600))
+            self.image = cv2.resize(self.image,(600,self.sizeImg[0]))
+        if(self.sizeImg[1] > 600):
+            self.image = cv2.resize(self.image,(self.sizeImg[1], 600))
         
         # autalizando informações da imagem
         self.sizeImg = self.image.shape
@@ -102,6 +102,17 @@ class Example(QWidget):
             return Nome+Larg+Alt+Tipo+Past
         else:
             return "Nenhuma imagem a ser informada!"
+
+    # def mouseMoveEvent(self, event: QMouseEvent):
+    #     posit = event.pos()
+    #     x, y = posit.x(), posit.y()
+    #     # print(event.pos())
+    #     print(x , y)
+        
+
+
+    # def dRect(self):
+
 
 
 ###########################################################################
@@ -155,9 +166,9 @@ class MainWindow(QMainWindow):
         self.infoAct.setShortcut('Ctrl+I')
         self.infoAct.triggered.connect(self.Infos)
         
-        # # ação Desenhar
-        # self.desenharAct = QAction(QIcon('icons/desenhar.png'), 'Desenhar linha', self)
-
+        # # ação Desenhar retangulo
+        # self.desenharRectAct = QAction(QIcon('icons/retangulo.png'), 'Desenhar retângulo', self)
+        # self.desenharRectAct.triggered.connect(self.ex.dRect)
 
         # # ação Pintar
         # self.pintAct = QAction(QIcon('icons/pintar.png'), 'Pintar', self)
@@ -184,6 +195,7 @@ class MainWindow(QMainWindow):
         cmenu = QMenu(self)
         # infAct = cmenu.addAction(self.infoAct)
         atualAct = cmenu.addAction(self.autalizeAct)
+        infAct = cmenu.addAction(self.infoAct)
         quitAct = cmenu.addAction(self.exitAct)
         action = cmenu.exec_(self.mapToGlobal(event.pos()))
     
@@ -208,8 +220,9 @@ class MainWindow(QMainWindow):
     def Infos(self):
         QMessageBox.about(self, "Informações", self.ex.mostrarInformacoes())
         
+    
 
-
+    # def mousePressEvent()
     
 
 
