@@ -18,7 +18,7 @@ from PyQt5.QtCore import Qt
 class Example(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        self.image = None
+        self.image = ''
         self.sizeImg = None
         self.label = QLabel()
         self.initUI()
@@ -39,23 +39,32 @@ class Example(QWidget):
         self.image = cv2.imread(self.filename, cv2.IMREAD_UNCHANGED)
         self.typeImg = self.filename[-4: ]
 
-        self.mostrarImagen()
+        if (self.filename != ''):    
+            self.mostrarImagen()
 
     
-    def mostrarImagen(self):
-        # preciso das duas variaveis para dar um resize em cada janela
-        size = self.image.shape
-        self.sizeImg = self.image.shape
-        step = self.image.size / size[0]
+    def mostrarImagen(self):        
+        self.sizeImg = self.image.shape    
         qformat = QImage.Format_Indexed8
 
-        if len(size) == 3:
-            if size[2] == 4:
+        if len(self.sizeImg) == 3:
+            if self.sizeImg[2] == 4:
                 qformat = QImage.Format_RGBA8888
             else:
                 qformat = QImage.Format_RGB888
 
-        img = QImage(self.image, size[1], size[0], step, qformat)
+        # ajustar imagem na tela caso ela seja grande demais
+        if(self.sizeImg[1] > 600):
+            self.image = cv2.resize(self.image,(600,self.sizeImg[1]))
+        if(self.sizeImg[0] > 600):
+            self.image = cv2.resize(self.image,(self.sizeImg[0], 600))
+        
+        # autalizando informações da imagem
+        self.sizeImg = self.image.shape
+        step = self.image.size / self.sizeImg[0]
+
+        # parte final para mostrar
+        img = QImage(self.image, self.sizeImg[1], self.sizeImg[0], step, qformat)
         img = img.rgbSwapped()        
 
         self.label.setPixmap(QPixmap.fromImage(img))
@@ -70,7 +79,6 @@ class Example(QWidget):
                 self.pathSave = self.pathSave.replace(self.pathSave[i+1 : ], '')
             self.pathSave, _ = QFileDialog.getSaveFileName(self, 'Backup Contacts', self.pathSave, 'Image Files (*.png *.jpg *.bmp)')
             self.pathSave = self.pathSave+self.typeImg
-            print(self.pathSave)
 
             cv2.imwrite(self.pathSave, self.image)
 
@@ -84,7 +92,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.ex = Example(self)
-        self.setGeometry(300,100,640, 640)
+        self.setGeometry(300,70,640, 640)
+        # self.setGeometry(0,0,900, 700)
         self.setWindowTitle("PhotoTop! ;D")
 
         # Menu
@@ -102,6 +111,7 @@ class MainWindow(QMainWindow):
         # ação SAIR
         self.exitAct = QAction(QIcon('icons/exit.png'), 'Sair', self)
         self.exitAct.setShortcut('Ctrl+W')
+        # !!! pode colocar uma janela para perguntar se não quer salvar antes de fechar!!
         self.exitAct.triggered.connect(qApp.quit)
 
         # ação ABRIR
@@ -114,6 +124,10 @@ class MainWindow(QMainWindow):
         self.saveAct = QAction(QIcon('icons/save.png'), 'Salvar arquivo', self)
         self.saveAct.setShortcut('Ctrl+S')
         self.saveAct.triggered.connect(self.ex.salvarImagem)
+
+        # ação ATUALIZAR PAGINA (ajeitar tela)
+        self.autalizeAct = QAction(QIcon('icons/save.png'), 'Ajustar tela', self)
+        self.autalizeAct.triggered.connect(self.AtualizarPAgina)
 
         # # ação Desenhar
         # self.desenharAct = QAction(QIcon('icons/desenhar.png'), 'Desenhar linha', self)
@@ -140,11 +154,13 @@ class MainWindow(QMainWindow):
 
 
     def AtualizarPAgina(self):
-        self.resize(self.ex.sizeImg[1]+100, self.ex.sizeImg[0]+100)
+        if(self.ex.sizeImg != None):
+            self.resize(self.ex.sizeImg[1]+100, self.ex.sizeImg[0]+70)
 
     def contextMenuEvent(self, event):       
         cmenu = QMenu(self)
         # infAct = cmenu.addAction(self.infoAct)
+        atualAct = cmenu.addAction(self.autalizeAct)
         quitAct = cmenu.addAction(self.exitAct)
         action = cmenu.exec_(self.mapToGlobal(event.pos()))
     
