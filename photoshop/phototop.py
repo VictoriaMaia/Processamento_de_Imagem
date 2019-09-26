@@ -5,7 +5,7 @@ import os
 
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
-from PyQt5.QtWidgets import QAction, QMenu, QMainWindow, QToolBar, qApp
+from PyQt5.QtWidgets import QAction, QMenu, QMainWindow, QToolBar, qApp, QMessageBox
 from PyQt5.QtCore import Qt
 
 
@@ -37,9 +37,14 @@ class Example(QWidget):
     def abrirImagen(self):
         self.filename, _ = QFileDialog.getOpenFileName(None, 'Buscar Imagen', '.', 'Image Files (*.png *.jpg *.bmp)')
         self.image = cv2.imread(self.filename, cv2.IMREAD_UNCHANGED)
-        self.typeImg = self.filename[-4: ]
+        self.typeImg = self.filename[-4: ]        
 
         if (self.filename != ''):    
+            for i in range(len(self.filename)-1, -1, -1):
+                    if(self.filename[i] == '/'):
+                        break        
+            self.nameImg = self.filename[i+1 : ]
+
             self.mostrarImagen()
 
     
@@ -72,15 +77,31 @@ class Example(QWidget):
 
     def salvarImagem(self):   
         if(self.filename != ''):     
+            # se for diferente do HOME, salvar na pasta onde ele ja esta
             if(self.pathSave != os.getenv('HOME')):
                 for i in range(len(self.pathSave)-1, -1, -1):
                     if(self.pathSave[i] == '/'):
                         break
-                self.pathSave = self.pathSave.replace(self.pathSave[i+1 : ], '')
+                self.pathSave = self.pathSave.replace(self.pathSave[i+1 : ], '')            
             self.pathSave, _ = QFileDialog.getSaveFileName(self, 'Backup Contacts', self.pathSave, 'Image Files (*.png *.jpg *.bmp)')
-            self.pathSave = self.pathSave+self.typeImg
+            
+            # verificar se quer substituir imagem
+            if(self.pathSave[-4: ] != self.typeImg):
+                self.pathSave = self.pathSave+self.typeImg
 
             cv2.imwrite(self.pathSave, self.image)
+
+    def mostrarInformacoes(self):
+        if (self.filename != ''):
+            Nome = "Nome: \n      " + self.nameImg + "\n\n"
+            Larg = "Largura: \n      " + str(self.sizeImg[1]) + "\n\n"
+            Alt = "Altura: \n      " + str(self.sizeImg[0]) + "\n\n"
+            Tipo = "Tipo: \n      " + self.typeImg + "\n\n"
+            Past = "Pasta: \n      " + self.filename + "\n\n"
+
+            return Nome+Larg+Alt+Tipo+Past
+        else:
+            return "Nenhuma imagem a ser informada!"
 
 
 ###########################################################################
@@ -111,8 +132,8 @@ class MainWindow(QMainWindow):
         # ação SAIR
         self.exitAct = QAction(QIcon('icons/exit.png'), 'Sair', self)
         self.exitAct.setShortcut('Ctrl+W')
-        # !!! pode colocar uma janela para perguntar se não quer salvar antes de fechar!!
         self.exitAct.triggered.connect(qApp.quit)
+        # self.exitAct.triggered.connect(self.FecharTela)
 
         # ação ABRIR
         self.openAct = QAction(QIcon('icons/open.png'), 'Abrir arquivo', self)
@@ -120,7 +141,7 @@ class MainWindow(QMainWindow):
         self.openAct.triggered.connect(self.ex.abrirImagen)
         self.openAct.triggered.connect(self.AtualizarPAgina)
         
-        # ação Salvar
+        # ação SALVAR
         self.saveAct = QAction(QIcon('icons/save.png'), 'Salvar arquivo', self)
         self.saveAct.setShortcut('Ctrl+S')
         self.saveAct.triggered.connect(self.ex.salvarImagem)
@@ -129,6 +150,11 @@ class MainWindow(QMainWindow):
         self.autalizeAct = QAction(QIcon('icons/save.png'), 'Ajustar tela', self)
         self.autalizeAct.triggered.connect(self.AtualizarPAgina)
 
+        # # ação Informarções
+        self.infoAct = QAction(QIcon('icons/info.png'), 'Informações da imagem', self)
+        self.infoAct.setShortcut('Ctrl+I')
+        self.infoAct.triggered.connect(self.Infos)
+        
         # # ação Desenhar
         # self.desenharAct = QAction(QIcon('icons/desenhar.png'), 'Desenhar linha', self)
 
@@ -137,15 +163,12 @@ class MainWindow(QMainWindow):
         # self.pintAct = QAction(QIcon('icons/pintar.png'), 'Pintar', self)
 
 
-        # # ação Informarções
-        # self.infoAct = QAction(QIcon('icons/info.png'), 'Informações da imagem', self)
-        # self.infoAct.setShortcut('Ctrl+I')
 
 
         # Actions for Menu
         self.fileMenu.addAction(self.openAct)
         self.fileMenu.addAction(self.saveAct)
-        # self.fileMenu.addAction(self.infoAct)
+        self.fileMenu.addAction(self.infoAct)
         self.fileMenu.addAction(self.exitAct)
         
     
@@ -163,6 +186,30 @@ class MainWindow(QMainWindow):
         atualAct = cmenu.addAction(self.autalizeAct)
         quitAct = cmenu.addAction(self.exitAct)
         action = cmenu.exec_(self.mapToGlobal(event.pos()))
+    
+    # def closeEvent(self, event):        
+    #     reply = QMessageBox.question(self, 'Mensagem',
+    #         "Certeza que quer sair?", QMessageBox.Yes | 
+    #         QMessageBox.No, QMessageBox.No)
+
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #     else:
+    #         event.ignore()    
+
+    # def FecharTela(self):
+    #     reply = QMessageBox.question(self, 'Mensagem',
+    #         "Certeza que quer sair?", QMessageBox.Yes | 
+    #         QMessageBox.No, QMessageBox.No)
+
+    #     if reply == QMessageBox.Yes:
+    #         qApp.quit()
+          
+    def Infos(self):
+        QMessageBox.about(self, "Informações", self.ex.mostrarInformacoes())
+        
+
+
     
 
 
