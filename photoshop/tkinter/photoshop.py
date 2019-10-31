@@ -1,4 +1,4 @@
-from tkinter import Tk, BOTH, Frame, Menu, Button, filedialog, Label, messagebox, colorchooser
+from tkinter import Tk, BOTH, Frame, Menu, Button, filedialog, Label, messagebox, colorchooser, Toplevel
 from tkinter import LEFT, TOP, X, FLAT, RAISED, W
 import tkinter
 
@@ -31,6 +31,10 @@ class Example(Frame):
         self.trace = 0
         self.listObj = []
         self.objectId = 0
+        self.fillCor = ""
+        self.outline = "black"
+        self.tamLinha = 1
+        
         # self.action = None
         
         self.initMenu()      
@@ -55,7 +59,11 @@ class Example(Frame):
         # Criar menus
         self.fileMenu = Menu(self.master, tearoff=0)
         self.visualizarMenu = Menu(self.master, tearoff=0)
-        self.ferramentaMenu = Menu(self.master, tearoff=0)    
+        self.ferramentaMenu = Menu(self.master, tearoff=0)   
+        self.desenhoMenu = Menu(self.master, tearoff=0)    
+        self.corMenu = Menu(self.master, tearoff=0)
+        self.linhaMenu = Menu(self.master, tearoff=0)
+         
 
         # Adicionar comando
         self.fileMenu.add_command(label="Abrir Imagem", command=self.onOpen)
@@ -66,15 +74,28 @@ class Example(Frame):
         self.visualizarMenu.add_command(label="RGB", command=self.onRGB)
         self.visualizarMenu.add_command(label="HSV", command=self.onHSV)
 
-        self.ferramentaMenu.add_command(label="Desenhar", command=self.onDesenhar)
-        self.ferramentaMenu.add_command(label="Desenhar circulo", command=self.onDesenharCir) #1
-        self.ferramentaMenu.add_command(label="Desenhar quadrado", command=self.onDesenharQuadrado) #2
-        # self.ferramentaMenu.add_command(label="Selecionar cor", command=self.onColor)
+        self.desenhoMenu.add_command(label="Desenhar", command=self.onDesenhar)
+        self.desenhoMenu.add_command(label="Circulo", command=self.onDesenharCir) 
+        self.desenhoMenu.add_command(label="Quadrado", command=self.onDesenharQuadrado) 
+        self.desenhoMenu.add_command(label="Linha", command=self.onDesenharLinha) 
+        
+        self.corMenu.add_command(label="Contorno", command=self.onEscolherCor_Contorno)
+        self.corMenu.add_command(label="Preenchimento", command=self.onEscolherCor_Preencher)
+        self.corMenu.add_command(label="Contorno e Preenchimento", command=self.onPreen_Contor)
+        self.corMenu.add_command(label="Default", command=self.onDefault)
+
+        self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
+        self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
+        
         
         # Mostrar os menus
         self.menubar.add_cascade(label="Arquivo", menu=self.fileMenu)
         self.menubar.add_cascade(label="Visualizar", menu=self.visualizarMenu)
         self.menubar.add_cascade(label= "Ferramentas", menu = self.ferramentaMenu)
+        
+        self.ferramentaMenu.add_cascade(label= "Desenho", menu = self.desenhoMenu)
+        self.ferramentaMenu.add_cascade(label= "Cor", menu = self.corMenu)
+        self.ferramentaMenu.add_cascade(label= "Linha", menu = self.linhaMenu)
         
         self.master.config(menu=self.menubar)
 
@@ -152,6 +173,10 @@ class Example(Frame):
         self.desenho = 1
         self.action = self.canvas.create_rectangle
 
+    def onDesenharLinha(self):
+        self.desenho = 1
+        self.action = self.canvas.create_line
+
     
     def onStart(self, event):
         if self.desenhar != 0: #desenhar circulo
@@ -164,7 +189,7 @@ class Example(Frame):
             self.canvas = event.widget
             if self.drawn: self.canvas.delete(self.drawn)
             if(self.desenho != 0):
-                self.objectId = self.action(self.start.x, self.start.y, event.x, event.y)
+                self.objectId = self.action(self.start.x, self.start.y, event.x, event.y, fill=self.fillCor, outline=self.outline, width=self.tamLinha)
             self.drawn = self.objectId
 
     def onSabeIdObj(self, event):
@@ -178,12 +203,43 @@ class Example(Frame):
             self.canvas.delete(self.listObj[-1])
             self.listObj.pop()
 
+    def onEscolherCor_Preencher(self):
+        (_, hx) = colorchooser.askcolor()
+        self.fillCor = hx
 
-    # def onColor(self):
+    def onEscolherCor_Contorno(self):
+        (_, hx) = colorchooser.askcolor()
+        self.outline = hx
 
-    # def onDesenharCirculo(self):
+    def onDefault(self):
+        self.fillCor = ""
+        self.outline = "black"
+    
+    def onPreen_Contor(self):
+        (_, hx) = colorchooser.askcolor()
+        self.fillCor = hx
+        self.outline = hx
+    
+    
+    def new_winEspessura(self): # new window definition
+        newwin = Toplevel(self.master)
+        display = Label(newwin, text="Humm, see a new window !")
+        self.canvasNewWind = tkinter.Canvas(newwin, width = 250, height = 70)
+        self.canvasNewWind.create_line(50, 25, 200, 25)
+        self.tkScale = tkinter.Scale(newwin, from_=1, to=20, orient=tkinter.HORIZONTAL, command=self.atualiza)
+        self.tkScale.pack(anchor=tkinter.CENTER)
+        self.canvasNewWind.pack()
+        display.pack() 
+            
+    def atualiza(self, event):
+        self.canvasNewWind.delete('all')
+        self.canvasNewWind.create_line(50, 25, 200, 25, width=self.tkScale.get())
+        self.tamLinha = self.tkScale.get()
+    
+    def onDefaultLinha(self):
+        self.tamLinha = 1
 
-
+    
 
 def main():
     root = Tk()
