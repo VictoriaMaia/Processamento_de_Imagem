@@ -23,6 +23,7 @@ class Example(Frame):
         self.str_tamanho_janela = str(self.width)+ 'x' + str(self.height)
         #  geometry(width x height)
         self.master.geometry(self.str_tamanho_janela+'+200+100')
+        
         # auxiliares
         self.filepath = ""
         self.rgb = 1
@@ -34,9 +35,7 @@ class Example(Frame):
         self.fillCor = ""
         self.outline = "black"
         self.tamLinha = 1
-        
-        # self.action = None
-        
+                
         self.initMenu()      
 
         self.canvas = tkinter.Canvas(self.master, width = self.width, height = self.height)
@@ -47,9 +46,6 @@ class Example(Frame):
         self.canvas.bind('<ButtonPress-3>', self.onDelete)
         self.canvas.bind('<ButtonRelease-1>', self.onSabeIdObj)
         
-
-
-
         self.pack()
 
 
@@ -86,8 +82,7 @@ class Example(Frame):
 
         self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
         self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
-        
-        
+                
         # Mostrar os menus
         self.menubar.add_cascade(label="Arquivo", menu=self.fileMenu)
         self.menubar.add_cascade(label="Visualizar", menu=self.visualizarMenu)
@@ -113,7 +108,6 @@ class Example(Frame):
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
             # self.canvas.bind(('<Configure>' self._resize_image))
             
-
     # def _resize_image(self,event):
     #     new_width = event.width
     #     new_height = event.height
@@ -140,6 +134,8 @@ class Example(Frame):
             # escrever na imagem
             # self.canvas.create_text(20, 30, anchor=W, font="Purisa", text=strNome+strFormato)
 
+# FUNÇÕES DE VISUALIZAR RGB E HSV
+
     def onRGB(self):
         if len(self.filepath) != 0:
             if self.rgb == 0:
@@ -156,6 +152,8 @@ class Example(Frame):
                 self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_HSV))
                 self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
                 self.rgb = 0
+
+# FUNÇÕES DE DESENHO
 
     def onDesenhar(self):
         if self.desenhar == 0:
@@ -176,8 +174,9 @@ class Example(Frame):
     def onDesenharLinha(self):
         self.desenho = 1
         self.action = self.canvas.create_line
-
     
+# PEGAR MOVIMENTOS DO MOUSE PARA DESENHO
+
     def onStart(self, event):
         if self.desenhar != 0: #desenhar circulo
             # print("ui")
@@ -203,6 +202,8 @@ class Example(Frame):
             self.canvas.delete(self.listObj[-1])
             self.listObj.pop()
 
+# SELEÇÃO DE COR
+
     def onEscolherCor_Preencher(self):
         (_, hx) = colorchooser.askcolor()
         self.fillCor = hx
@@ -220,7 +221,8 @@ class Example(Frame):
         self.fillCor = hx
         self.outline = hx
     
-    
+# SELEÇÃO DE ESPESSURA DE LINHA
+
     def new_winEspessura(self): # new window definition
         newwin = Toplevel(self.master)
         display = Label(newwin, text="Humm, see a new window !")
