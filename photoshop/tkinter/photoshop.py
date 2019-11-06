@@ -1,4 +1,5 @@
 from tkinter import Tk, BOTH, Frame, Menu, Button, filedialog, Label, messagebox, colorchooser, Toplevel
+from tkinter import Checkbutton, IntVar
 from tkinter import LEFT, TOP, X, FLAT, RAISED, W
 import tkinter
 
@@ -26,15 +27,26 @@ class Example(Frame):
         
         # auxiliares
         self.filepath = ""
+        self.Im_height = 0
+        self.Im_width = 0
         self.rgb = 1
         self.desenhar = 0
         self.desenho = 0
+        self.desenhoLinha = 0
         self.trace = 0
         self.listObj = []
         self.objectId = 0
         self.fillCor = ""
         self.outline = "black"
         self.tamLinha = 1
+        self.R = IntVar()
+        self.G = IntVar()
+        self.B = IntVar()
+        self.H = IntVar()
+        self.S = IntVar()
+        self.V = IntVar()
+        # self.varButtonRGB = IntVar()
+    
                 
         self.initMenu()      
 
@@ -59,6 +71,7 @@ class Example(Frame):
         self.desenhoMenu = Menu(self.master, tearoff=0)    
         self.corMenu = Menu(self.master, tearoff=0)
         self.linhaMenu = Menu(self.master, tearoff=0)
+        self.segmentacaoMenu = Menu(self.master, tearoff=0)
          
 
         # Adicionar comando
@@ -69,6 +82,7 @@ class Example(Frame):
         
         self.visualizarMenu.add_command(label="RGB", command=self.onRGB)
         self.visualizarMenu.add_command(label="HSV", command=self.onHSV)
+        self.visualizarMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
 
         self.desenhoMenu.add_command(label="Desenhar", command=self.onDesenhar)
         self.desenhoMenu.add_command(label="Circulo", command=self.onDesenharCir) 
@@ -82,15 +96,19 @@ class Example(Frame):
 
         self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
         self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
+
+        # self.segmentacaoMenu.add_command(label="Threshold", command=self.onthresold)
                 
         # Mostrar os menus
         self.menubar.add_cascade(label="Arquivo", menu=self.fileMenu)
         self.menubar.add_cascade(label="Visualizar", menu=self.visualizarMenu)
         self.menubar.add_cascade(label= "Ferramentas", menu = self.ferramentaMenu)
-        
+        self.menubar.add_cascade(label= "Segmentação", menu = self.segmentacaoMenu)
+
         self.ferramentaMenu.add_cascade(label= "Desenho", menu = self.desenhoMenu)
         self.ferramentaMenu.add_cascade(label= "Cor", menu = self.corMenu)
         self.ferramentaMenu.add_cascade(label= "Linha", menu = self.linhaMenu)
+
         
         self.master.config(menu=self.menubar)
 
@@ -102,11 +120,12 @@ class Example(Frame):
 
         if len(self.filepath) != 0:            
             self.cv_img = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_BGR2RGB)
-            # self.height, self.width, self.no_channels = self.cv_img.shape
+            
+            self.Im_height, self.Im_width, _ = self.cv_img.shape
 
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-            # self.canvas.bind(('<Configure>' self._resize_image))
+            # self.canvas.bind(("<Configure>", self._resize_image))
             
     # def _resize_image(self,event):
     #     new_width = event.width
@@ -117,9 +136,11 @@ class Example(Frame):
     #     self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
     # def onSave(self):
-    #     filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
-    #     img = Image.open("test.ps") 
-    #     img.save(filepathSave + '.png', 'png') 
+            # filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
+            # self.canvas.postscript(file="test.ps", pageheight=self.Im_height, pagewidth=self.Im_width)
+            # self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            # img = Image.open("test.ps") 
+            # img.save(filepathSave + '.png', 'png') 
 
     def onInfo(self):
         if(len(self.filepath) == 0):
@@ -134,24 +155,117 @@ class Example(Frame):
             # escrever na imagem
             # self.canvas.create_text(20, 30, anchor=W, font="Purisa", text=strNome+strFormato)
 
-# FUNÇÕES DE VISUALIZAR RGB E HSV
+# FUNÇÕES DE VISUALIZAR RGB
+    def onDefaultRGBHSV(self):
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def oncanaisRGB(self):
+        if len(self.filepath) != 0:
+            imgCopy = self.cv_img.copy()
+            if (self.R.get() and self.G.get() == 0 and self.B.get() == 0): #apenas canal vermelho
+                imgCopy[:,:,1] = 0
+                imgCopy[:,:,2] = 0                
+
+            elif (self.G.get() and self.R.get() == 0 and self.B.get() == 0): #apenas canal verde
+                imgCopy[:,:,0] = 0
+                imgCopy[:,:,2] = 0  
+
+            elif (self.B.get() and self.R.get() == 0 and self.G.get() == 0): #apenas canal azul
+                imgCopy[:,:,0] = 0
+                imgCopy[:,:,1] = 0  
+            
+            elif (self.B.get() and self. R.get() and self.G.get() == 0): #apenas canal azul e vermelho
+                imgCopy[:,:,1] = 0 
+            
+            elif (self.B.get() and self.G.get() and self.R.get() == 0): #apenas canal azul e verde
+                imgCopy[:,:,0] = 0 
+            
+            elif (self.R.get() and self.G.get() and self.B.get() == 0): #apenas canal vermelho e verde
+                imgCopy[:,:,2] = 0 
+                        
+            elif (self.R.get() == 0 and self.G.get() == 0 and self.B.get() == 0): #apagou geral
+                imgCopy[:,:,0] = 0
+                imgCopy[:,:,1] = 0  
+                imgCopy[:,:,2] = 0  
+            
+            elif (self.R.get() and self.G.get() and self.B.get()): #Tudo
+                self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
+                self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)    
+                return
+                
+            
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
 
     def onRGB(self):
-        if len(self.filepath) != 0:
-            if self.rgb == 0:
-                img_RGB = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_HSV2BGR)
-                img_RGB = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_BGR2RGB)
-                self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_RGB))
-                self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-                self.rgb = 1
+        newwin = Toplevel(self.master)
+        newwin.geometry('200x100')
+        cR = Checkbutton(newwin, text="Canal R", variable=self.R, command=self.cRGB)
+        cG = Checkbutton(newwin, text="Canal G", variable=self.G, command=self.cRGB)
+        cB = Checkbutton(newwin, text="Canal B", variable=self.B, command=self.cRGB)
+        cR.pack()
+        cG.pack()
+        cB.pack()
     
-    def onHSV(self):
+    def cRGB(self):
+        self.oncanaisRGB()
+
+# FUNÇÕES DE VISUALIZAR HSV
+    def oncanaisHSV(self):
         if len(self.filepath) != 0:
-            if self.rgb == 1:               
-                img_HSV = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_RGB2HSV)
-                self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_HSV))
-                self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-                self.rgb = 0
+            imgCopy = self.cv_img.copy()
+            imgCopy = cv2.cvtColor(imgCopy, cv2.COLOR_RGB2HSV)
+
+            if (self.H.get() and self.S.get() == 0 and self.V.get() == 0): #apenas canal vermelho
+                imgCopy[:,:,1] = 0
+                imgCopy[:,:,2] = 0                
+
+            elif (self.S.get() and self.H.get() == 0 and self.V.get() == 0): #apenas canal verde
+                imgCopy[:,:,0] = 0
+                imgCopy[:,:,2] = 0  
+
+            elif (self.V.get() and self.H.get() == 0 and self.S.get() == 0): #apenas canal azul
+                imgCopy[:,:,0] = 0
+                imgCopy[:,:,1] = 0  
+            
+            elif (self.V.get() and self. R.get() and self.S.get() == 0): #apenas canal azul e vermelho
+                imgCopy[:,:,1] = 0 
+            
+            elif (self.V.get() and self.S.get() and self.H.get() == 0): #apenas canal azul e verde
+                imgCopy[:,:,0] = 0 
+            
+            elif (self.H.get() and self.S.get() and self.V.get() == 0): #apenas canal vermelho e verde
+                imgCopy[:,:,2] = 0 
+                        
+            elif (self.H.get() == 0 and self.S.get() == 0 and self.V.get() == 0): #apagou geral
+                imgCopy[:,:,0] = 0
+                imgCopy[:,:,1] = 0  
+                imgCopy[:,:,2] = 0  
+            
+            elif (self.H.get() and self.S.get() and self.V.get()): #Tudo
+                self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
+                self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)    
+                return
+                
+            
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def onHSV(self):
+        newwin = Toplevel(self.master)
+        newwin.geometry('200x100')
+        cH = Checkbutton(newwin, text="Canal H", variable=self.H, command=self.cHSV)
+        cS = Checkbutton(newwin, text="Canal S", variable=self.S, command=self.cHSV)
+        cV = Checkbutton(newwin, text="Canal V", variable=self.V, command=self.cHSV)
+        cH.pack()
+        cS.pack()
+        cV.pack()
+    
+    def cHSV(self):
+        self.oncanaisHSV()
 
 # FUNÇÕES DE DESENHO
 
@@ -161,19 +275,21 @@ class Example(Frame):
         else:
             self.desenhar = 0
             self.desenho = 0
-        print(self.desenhar)
+            self.desenhoLinha = 0
     
     def onDesenharCir(self):
         self.desenho = 1
+        self.desenhoLinha = 0
         self.action = self.canvas.create_oval
 
     def onDesenharQuadrado(self):
         self.desenho = 1
+        self.desenhoLinha = 0
         self.action = self.canvas.create_rectangle
 
     def onDesenharLinha(self):
         self.desenho = 1
-        self.action = self.canvas.create_line
+        self.desenhoLinha = 1
     
 # PEGAR MOVIMENTOS DO MOUSE PARA DESENHO
 
@@ -188,7 +304,10 @@ class Example(Frame):
             self.canvas = event.widget
             if self.drawn: self.canvas.delete(self.drawn)
             if(self.desenho != 0):
-                self.objectId = self.action(self.start.x, self.start.y, event.x, event.y, fill=self.fillCor, outline=self.outline, width=self.tamLinha)
+                if(self.desenhoLinha == 1):
+                    self.objectId = self.canvas.create_line(self.start.x, self.start.y, event.x, event.y, fill=self.outline, width=self.tamLinha)
+                else:
+                    self.objectId = self.action(self.start.x, self.start.y, event.x, event.y, fill=self.fillCor, outline=self.outline, width=self.tamLinha)
             self.drawn = self.objectId
 
     def onSabeIdObj(self, event):
@@ -241,7 +360,11 @@ class Example(Frame):
     def onDefaultLinha(self):
         self.tamLinha = 1
 
-    
+# FERRAMENTAS DE SEGMENTAÇÃO
+
+    # def onthresold(self):
+
+
 
 def main():
     root = Tk()
