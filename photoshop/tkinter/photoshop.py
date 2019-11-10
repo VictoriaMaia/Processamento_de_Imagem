@@ -6,7 +6,7 @@ import tkinter
 # from tkinter.ttk import Frame
 from PIL import Image, ImageTk
 import cv2
-
+import pyscreenshot as ImageGrab 
 
 class Example(Frame):
 
@@ -29,6 +29,7 @@ class Example(Frame):
         self.filepath = ""
         self.Im_height = 0
         self.Im_width = 0
+        self.canais = 0
         self.rgb = 1
         self.desenhar = 0
         self.desenho = 0
@@ -120,27 +121,21 @@ class Example(Frame):
 
         if len(self.filepath) != 0:            
             self.cv_img = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_BGR2RGB)
-            
-            self.Im_height, self.Im_width, _ = self.cv_img.shape
+            self.Im_height, self.Im_width, self.canais = self.cv_img.shape
+            # self.canvas = tkinter.Canvas(self.master, width = self.Im_width, height = self.Im_height)
 
+            self.master.geometry(str(self.Im_width)+'x'+str(self.Im_height)+'+200+100')
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.config(width = self.Im_width, height = self.Im_height)
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-            # self.canvas.bind(("<Configure>", self._resize_image))
-            
-    # def _resize_image(self,event):
-    #     new_width = event.width
-    #     new_height = event.height
-
-    #     image = self.cv_img.resize((new_width, new_height))
-    #     self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(image))
-    #     self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
     # def onSave(self):
-            # filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
-            # self.canvas.postscript(file="test.ps", pageheight=self.Im_height, pagewidth=self.Im_width)
-            # self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
-            # img = Image.open("test.ps") 
-            # img.save(filepathSave + '.png', 'png') 
+    #         filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
+    #         print(filepathSave)
+            # box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
+            # grab = ImageGrab.grab(bbox = box)
+            # grab.save("new_img.png")
+
 
     def onInfo(self):
         if(len(self.filepath) == 0):
@@ -151,9 +146,27 @@ class Example(Frame):
                     if(self.filepath[i] == '/'):
                         break        
             strNome = "Nome : " + self.filepath[i+1 : ] + "\n"
-            messagebox.showinfo("Informações", strNome+strFormato)
+            strDimensao = "Dimensões : ( " + str(self.Im_height) + " , " + str(self.Im_width) + " )\n"
+            strCanais = "Canais : " + str(self.canais) + "\n"
+            messagebox.showinfo("Informações", strNome+strFormato+strDimensao+strCanais)
             # escrever na imagem
             # self.canvas.create_text(20, 30, anchor=W, font="Purisa", text=strNome+strFormato)
+
+    def atualizarImg(self):
+        box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
+        print(box)
+        grab = ImageGrab.grab(bbox = box)
+        grab.save("new_img.png")
+        # grab.save("new_img"+self.filepath[-4: ])
+        # self.canvas.postscript(file="new_img.ps", height=self.Im_height, width=self.Im_width)
+        # img = Image.open("new_img.ps") 
+        # img.save("new_img.png") 
+        # self.cv_img = cv2.cvtColor(cv2.imread("new_img.png"), cv2.COLOR_BGR2RGB)    
+        # # self.Im_height, self.Im_width, self.canais = self.cv_img.shape
+        # self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        # self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        print("imagem atualizada")
+            
 
 # FUNÇÕES DE VISUALIZAR RGB
     def onDefaultRGBHSV(self):
@@ -276,6 +289,8 @@ class Example(Frame):
             self.desenhar = 0
             self.desenho = 0
             self.desenhoLinha = 0
+            if len(self.filepath) != 0:
+                self.atualizarImg()
     
     def onDesenharCir(self):
         self.desenho = 1
