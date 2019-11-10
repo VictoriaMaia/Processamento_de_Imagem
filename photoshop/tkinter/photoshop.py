@@ -7,6 +7,7 @@ import tkinter
 from PIL import Image, ImageTk
 import cv2
 import pyscreenshot as ImageGrab 
+import time
 
 class Example(Frame):
 
@@ -77,7 +78,7 @@ class Example(Frame):
 
         # Adicionar comando
         self.fileMenu.add_command(label="Abrir Imagem", command=self.onOpen)
-        # self.fileMenu.add_command(label="Salvar Imagem", command=self.onSave)
+        self.fileMenu.add_command(label="Salvar Imagem", command=self.onSave)
         self.fileMenu.add_command(label="Informações", command=self.onInfo)
         self.fileMenu.add_command(label="Sair", command=self.onExit)
         
@@ -129,12 +130,12 @@ class Example(Frame):
             self.canvas.config(width = self.Im_width, height = self.Im_height)
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
-    # def onSave(self):
-    #         filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
-    #         print(filepathSave)
-            # box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
-            # grab = ImageGrab.grab(bbox = box)
-            # grab.save("new_img.png")
+    def onSave(self):
+            filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
+            time.sleep(.5)            
+            box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
+            grab = ImageGrab.grab(bbox = box)
+            grab.save(filepathSave)
 
 
     def onInfo(self):
