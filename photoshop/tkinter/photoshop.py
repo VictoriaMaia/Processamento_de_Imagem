@@ -8,6 +8,7 @@ from PIL import Image, ImageTk
 import cv2
 import pyscreenshot as ImageGrab 
 import time
+import os
 
 class Example(Frame):
 
@@ -157,16 +158,11 @@ class Example(Frame):
         box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
         print(box)
         grab = ImageGrab.grab(bbox = box)
-        grab.save("new_img.png")
-        # grab.save("new_img"+self.filepath[-4: ])
-        # self.canvas.postscript(file="new_img.ps", height=self.Im_height, width=self.Im_width)
-        # img = Image.open("new_img.ps") 
-        # img.save("new_img.png") 
-        # self.cv_img = cv2.cvtColor(cv2.imread("new_img.png"), cv2.COLOR_BGR2RGB)    
-        # # self.Im_height, self.Im_width, self.canais = self.cv_img.shape
-        # self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
-        # self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-        print("imagem atualizada")
+        grab.save("new_img"+self.filepath[-4: ])
+        self.cv_img = cv2.cvtColor(cv2.imread("new_img"+self.filepath[-4: ]), cv2.COLOR_BGR2RGB)    
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        os.remove("new_img"+self.filepath[-4: ])
             
 
 # FUNÇÕES DE VISUALIZAR RGB
@@ -282,9 +278,12 @@ class Example(Frame):
         self.oncanaisHSV()
 
 # FUNÇÕES DE DESENHO
+    def avisoDesenho(self):
+        messagebox.showinfo("Aviso", "Ao terminar de desenhar clique novamente no botão desenhar.\nO desenho será salvo automaticamente na imagem e não poderá ser apagado após salvo.")
 
     def onDesenhar(self):
         if self.desenhar == 0:
+            self.avisoDesenho()
             self.desenhar = 1
         else:
             self.desenhar = 0
