@@ -9,6 +9,7 @@ import cv2
 import pyscreenshot as ImageGrab 
 import time
 import os
+import numpy as np
 
 class Example(Frame):
 
@@ -25,7 +26,7 @@ class Example(Frame):
         self.tamIcon = 30
         self.str_tamanho_janela = str(self.width)+ 'x' + str(self.height)
         #  geometry(width x height)
-        self.master.geometry(self.str_tamanho_janela+'+200+100')
+        self.master.geometry(self.str_tamanho_janela+'+300+100')
         
         # auxiliares
         self.filepath = ""
@@ -48,9 +49,7 @@ class Example(Frame):
         self.H = IntVar()
         self.S = IntVar()
         self.V = IntVar()
-        # self.varButtonRGB = IntVar()
-    
-                
+                    
         self.initMenu()      
 
         self.canvas = tkinter.Canvas(self.master, width = self.width, height = self.height)
@@ -100,7 +99,10 @@ class Example(Frame):
         self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
         self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
 
-        # self.segmentacaoMenu.add_command(label="Threshold", command=self.onthresold)
+        # self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
+        # self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
+        self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
+
                 
         # Mostrar os menus
         self.menubar.add_cascade(label="Arquivo", menu=self.fileMenu)
@@ -124,9 +126,7 @@ class Example(Frame):
         if len(self.filepath) != 0:            
             self.cv_img = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_BGR2RGB)
             self.Im_height, self.Im_width, self.canais = self.cv_img.shape
-            # self.canvas = tkinter.Canvas(self.master, width = self.Im_width, height = self.Im_height)
-
-            self.master.geometry(str(self.Im_width)+'x'+str(self.Im_height)+'+200+100')
+            self.master.geometry(str(self.Im_width)+'x'+str(self.Im_height)+'+300+100')
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.config(width = self.Im_width, height = self.Im_height)
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
@@ -137,7 +137,6 @@ class Example(Frame):
             box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
             grab = ImageGrab.grab(bbox = box)
             grab.save(filepathSave)
-
 
     def onInfo(self):
         if(len(self.filepath) == 0):
@@ -156,7 +155,6 @@ class Example(Frame):
 
     def atualizarImg(self):
         box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
-        print(box)
         grab = ImageGrab.grab(bbox = box)
         grab.save("new_img"+self.filepath[-4: ])
         self.cv_img = cv2.cvtColor(cv2.imread("new_img"+self.filepath[-4: ]), cv2.COLOR_BGR2RGB)    
@@ -207,7 +205,6 @@ class Example(Frame):
             
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
 
     def onRGB(self):
         newwin = Toplevel(self.master)
@@ -262,7 +259,6 @@ class Example(Frame):
             
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
 
     def onHSV(self):
         newwin = Toplevel(self.master)
@@ -376,9 +372,127 @@ class Example(Frame):
         self.tamLinha = 1
 
 # FERRAMENTAS DE SEGMENTAÇÃO
+    ##### THRESOLD #####
+    def onthresold(self, event):
+        valor = self.tkScale.get()
+        if len(self.filepath) != 0: 
+            img_gray = cv2.cvtColor(self.cv_img, cv2.COLOR_BGR2GRAY) 
+            ret,im_thresh = cv2.threshold(img_gray ,valor, 255, cv2.THRESH_BINARY)
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(im_thresh))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
-    # def onthresold(self):
+    def onbarThre(self):
+        newwin = Toplevel(self.master)
+        display = Label(newwin, text="THRESOLD")
+        self.tkScale = tkinter.Scale(newwin, from_=0, to=255, orient=tkinter.HORIZONTAL, command=self.onthresold)
+        self.tkScale.pack(anchor=tkinter.CENTER)
+        display.pack() 
 
+    ##### WATERSHED #####
+    def aplicarNot(self):
+        self.im_thresh = cv2.bitwise_not(self.im_thresh)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.im_thresh))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onThresholdW(self, event):
+        valor = self.tkScaleThresold.get()        
+        ret, self.im_thresh = cv2.threshold(self.gray ,valor, 255, cv2.THRESH_BINARY)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.im_thresh))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onExtracaoRuido(self, event):
+        valor = self.tkScaleRuido.get()
+        self.opening = cv2.morphologyEx(self.im_thresh,cv2.MORPH_OPEN, self.kernel, iterations = valor)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.opening))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onDilata(self, event):
+        valor = self.tkScaleDilata.get()
+        self.sure_bg = cv2.dilate(self.opening, self.kernel,iterations=valor)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.sure_bg))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onErosao(self, event):
+        valor = self.tkScaleErosao.get()
+        dist_transform = cv2.distanceTransform(self.opening, cv2.DIST_L2, 5)
+        ret, self.sure_fg = cv2.threshold(dist_transform,valor, 255, 0)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.sure_fg))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def onRegioes(self):        
+        self.sure_fg = np.uint8(self.sure_fg)
+        unknown = cv2.subtract(self.sure_bg, self.sure_fg)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(unknown))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def onAplicarFinalW(self):
+        img = self.cv_img.copy()
+        ret, markers = cv2.connectedComponents(self.sure_fg)
+        markers = cv2.watershed(self.cv_img, markers)
+        markers = markers.astype(np.uint8)
+        ret, m2 = cv2.threshold(markers, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
+        contours, hierarchy = cv2.findContours(m2, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)    
+        for c in contours:
+            cv2.drawContours(img, c, -1, (255, 0, 0), 2)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+
+
+
+    def onWatershed(self):
+        if len(self.filepath) != 0: 
+            self.kernel = np.ones((3,3),np.uint8)        
+            self.gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
+            self.im_thresh = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
+            self.opening = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
+
+            
+            newwin = Toplevel(self.master)
+
+            # Coisas que irão ter na nova janela!
+            lEtapa1 = Label(newwin, text="Etapa 1\nEscolher thresold.\nRealçando o objeto\nAviso: Se o fundo da imagem estiver branco clique em 'Aplicar NOT'")
+            self.tkScaleThresold = tkinter.Scale(newwin, from_=0, to=255, orient=tkinter.HORIZONTAL, length=200, command=self.onThresholdW)
+            bNOT = Checkbutton(newwin, text="Aplicar NOT", command=self.aplicarNot)
+            
+            lEtapa2 = Label(newwin, text="Etapa 2.\nExtrair área de interesse.") #erosao e dilatacao
+            lExtRuido = Label(newwin, text="Extração de ruído.\nEscolha o número de iterações para aplicar a extração.")
+            self.tkScaleRuido = tkinter.Scale(newwin, from_=0, to=200, orient=tkinter.HORIZONTAL, length=200, command=self.onExtracaoRuido)
+            lDilata = Label(newwin, text="Dilatação.\nEscolha o número de iterações para aplicar a dilatação.\nEsse passo é para separar o que de certeza não é o objeto.")
+            self.tkScaleDilata = tkinter.Scale(newwin, from_=0, to=200, orient=tkinter.HORIZONTAL, length=200, command=self.onDilata)
+
+            lEtapa3 = Label(newwin, text="Etapa 3.\nEncontrar regiões e aplicar o Watershed")
+            lErosao = Label(newwin, text="Erosão.\nEscolha o número de iterações para aplicar a erosão.\nEsse passo é para extrair a área do objeto.")
+            self.tkScaleErosao = tkinter.Scale(newwin, from_=0, to=50, orient=tkinter.HORIZONTAL, length=200, command=self.onErosao)
+            lRegioes = Label(newwin, text="Ver as regiões encontradas com as operações feitas!\nQuando não quiser mais mudar clique no botão para aplicar o Watershed.")
+            bRegioes = Button(newwin, text="Regiões", command=self.onRegioes)
+            bWatershed = Button(newwin, text="Aplicar Watershed", command=self.onAplicarFinalW)
+            
+            
+            # ordem de aparição!
+            lEtapa1.pack()
+            self.tkScaleThresold.pack()
+            bNOT.pack()
+
+            lEtapa2.pack()
+            lExtRuido.pack()
+            self.tkScaleRuido.pack()
+            lDilata.pack()
+            self.tkScaleDilata.pack()
+
+            lEtapa3.pack()
+            lErosao.pack()
+            self.tkScaleErosao.pack()
+            lRegioes.pack()
+            bRegioes.pack()
+            bWatershed.pack()
+        else:
+            messagebox.showerror("Erro", "Para fazer esta ação é necessário carregar uma imagem.")
+
+        
 
 
 def main():
