@@ -76,6 +76,7 @@ class Example(Frame):
         self.linhaMenu = Menu(self.master, tearoff=0)
         self.segmentacaoMenu = Menu(self.master, tearoff=0)
         self.selecaoAreasMenu = Menu(self.master, tearoff=0)
+        self.correcaoDeCores = Menu(self.master, tearoff=0)
          
 
         # Adicionar comando
@@ -93,8 +94,6 @@ class Example(Frame):
         self.desenhoMenu.add_command(label="Quadrado", command=self.onDesenharQuadrado) 
         self.desenhoMenu.add_command(label="Linha", command=self.onDesenharLinha) 
         self.desenhoMenu.add_command(label="Linha Tracejada", command=self.onDesenharLinhaTrac) 
-
-        
         
         self.corMenu.add_command(label="Contorno", command=self.onEscolherCor_Contorno)
         self.corMenu.add_command(label="Preenchimento", command=self.onEscolherCor_Preencher)
@@ -111,14 +110,16 @@ class Example(Frame):
         self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
         self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
                 
+        self.correcaoDeCores.add_command(label="Historgrama", command=self.onHistogramaEq)
+
         # Mostrar os menus
         self.menubar.add_cascade(label= "Arquivo", menu=self.fileMenu)
         self.menubar.add_cascade(label= "Visualizar", menu=self.visualizarMenu)
         self.menubar.add_cascade(label= "Ferramentas", menu = self.ferramentaMenu)
         self.menubar.add_cascade(label= "Segmentação", menu = self.segmentacaoMenu)
         self.menubar.add_cascade(label= "Seleção Áreas", menu = self.selecaoAreasMenu)
-        self.menubar.add_cascade(label= "Colorização", menu = self.selecaoAreasMenu)
-        self.menubar.add_cascade(label= "Correção Cor", menu = self.selecaoAreasMenu)
+        # self.menubar.add_cascade(label= "Colorização", menu = self.selecaoAreasMenu)
+        self.menubar.add_cascade(label= "Correção Cor", menu = self.correcaoDeCores)
         self.menubar.add_cascade(label= "Filtros", menu = self.selecaoAreasMenu)
 
 
@@ -552,9 +553,18 @@ class Example(Frame):
         else:
             messagebox.showerror("Error", "Não tem imagem a ser cortada")
     
-            
 
+# FERRAMENTAS DE CORREÇÃO DE CORES
+    def onHistogramaEq(self):
+        iB, iG, iR = cv2.split(self.cv_img)
+        bEq = cv2.equalizeHist(iB)
+        gEq = cv2.equalizeHist(iG)
+        rEq = cv2.equalizeHist(iR)
+        img_equalizada = cv2.merge((bEq, gEq, rEq))
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_equalizada))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
+    
 def main():
     root = Tk()
     ex = Example()
