@@ -49,6 +49,7 @@ class Example(Frame):
         self.H = IntVar()
         self.S = IntVar()
         self.V = IntVar()
+        self.mostrarUmavez = 0
                     
         self.initMenu()      
 
@@ -74,6 +75,7 @@ class Example(Frame):
         self.corMenu = Menu(self.master, tearoff=0)
         self.linhaMenu = Menu(self.master, tearoff=0)
         self.segmentacaoMenu = Menu(self.master, tearoff=0)
+        self.selecaoAreasMenu = Menu(self.master, tearoff=0)
          
 
         # Adicionar comando
@@ -90,6 +92,9 @@ class Example(Frame):
         self.desenhoMenu.add_command(label="Circulo", command=self.onDesenharCir) 
         self.desenhoMenu.add_command(label="Quadrado", command=self.onDesenharQuadrado) 
         self.desenhoMenu.add_command(label="Linha", command=self.onDesenharLinha) 
+        self.desenhoMenu.add_command(label="Linha Tracejada", command=self.onDesenharLinhaTrac) 
+
+        
         
         self.corMenu.add_command(label="Contorno", command=self.onEscolherCor_Contorno)
         self.corMenu.add_command(label="Preenchimento", command=self.onEscolherCor_Preencher)
@@ -99,16 +104,23 @@ class Example(Frame):
         self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
         self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
 
-        # self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
-        # self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
+        self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
+        self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
         self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
 
+        self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
+        self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
                 
         # Mostrar os menus
-        self.menubar.add_cascade(label="Arquivo", menu=self.fileMenu)
-        self.menubar.add_cascade(label="Visualizar", menu=self.visualizarMenu)
+        self.menubar.add_cascade(label= "Arquivo", menu=self.fileMenu)
+        self.menubar.add_cascade(label= "Visualizar", menu=self.visualizarMenu)
         self.menubar.add_cascade(label= "Ferramentas", menu = self.ferramentaMenu)
         self.menubar.add_cascade(label= "Segmentação", menu = self.segmentacaoMenu)
+        self.menubar.add_cascade(label= "Seleção Áreas", menu = self.selecaoAreasMenu)
+        self.menubar.add_cascade(label= "Colorização", menu = self.selecaoAreasMenu)
+        self.menubar.add_cascade(label= "Correção Cor", menu = self.selecaoAreasMenu)
+        self.menubar.add_cascade(label= "Filtros", menu = self.selecaoAreasMenu)
+
 
         self.ferramentaMenu.add_cascade(label= "Desenho", menu = self.desenhoMenu)
         self.ferramentaMenu.add_cascade(label= "Cor", menu = self.corMenu)
@@ -117,7 +129,8 @@ class Example(Frame):
         
         self.master.config(menu=self.menubar)
 
-        
+# FUNÇÕES INICIAIS
+ 
     def onExit(self): self.quit()
 
     def onOpen(self):
@@ -132,11 +145,14 @@ class Example(Frame):
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
     def onSave(self):
+        if len(self.filepath) != 0:
             filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
             time.sleep(.5)            
             box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
             grab = ImageGrab.grab(bbox = box)
             grab.save(filepathSave)
+        else:
+            messagebox.showerror("Erro", "Não tem imagem para ser salva.")
 
     def onInfo(self):
         if(len(self.filepath) == 0):
@@ -164,6 +180,7 @@ class Example(Frame):
             
 
 # FUNÇÕES DE VISUALIZAR RGB
+
     def onDefaultRGBHSV(self):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
@@ -219,7 +236,9 @@ class Example(Frame):
     def cRGB(self):
         self.oncanaisRGB()
 
+
 # FUNÇÕES DE VISUALIZAR HSV
+
     def oncanaisHSV(self):
         if len(self.filepath) != 0:
             imgCopy = self.cv_img.copy()
@@ -273,13 +292,17 @@ class Example(Frame):
     def cHSV(self):
         self.oncanaisHSV()
 
+
 # FUNÇÕES DE DESENHO
+
     def avisoDesenho(self):
         messagebox.showinfo("Aviso", "Ao terminar de desenhar clique novamente no botão desenhar.\nO desenho será salvo automaticamente na imagem e não poderá ser apagado após salvo.")
 
     def onDesenhar(self):
         if self.desenhar == 0:
-            self.avisoDesenho()
+            if self.mostrarUmavez == 0:
+                self.avisoDesenho()
+                self.mostrarUmavez = 1
             self.desenhar = 1
         else:
             self.desenhar = 0
@@ -302,11 +325,15 @@ class Example(Frame):
         self.desenho = 1
         self.desenhoLinha = 1
     
+    def onDesenharLinhaTrac(self):
+        self.desenho = 1
+        self.desenhoLinha = 2
+    
+
 # PEGAR MOVIMENTOS DO MOUSE PARA DESENHO
 
     def onStart(self, event):
-        if self.desenhar != 0: #desenhar circulo
-            # print("ui")
+        if self.desenhar != 0: 
             self.start = event
             self.drawn = None
 
@@ -317,8 +344,11 @@ class Example(Frame):
             if(self.desenho != 0):
                 if(self.desenhoLinha == 1):
                     self.objectId = self.canvas.create_line(self.start.x, self.start.y, event.x, event.y, fill=self.outline, width=self.tamLinha)
-                else:
+                if(self.desenhoLinha == 2):
+                    self.objectId = self.canvas.create_line(self.start.x, self.start.y, event.x, event.y, fill=self.outline, width=self.tamLinha, dash=(4, 4))
+                else:                    
                     self.objectId = self.action(self.start.x, self.start.y, event.x, event.y, fill=self.fillCor, outline=self.outline, width=self.tamLinha)
+
             self.drawn = self.objectId
 
     def onSabeIdObj(self, event):
@@ -331,6 +361,7 @@ class Example(Frame):
         if(len(self.listObj) != 0):
             self.canvas.delete(self.listObj[-1])
             self.listObj.pop()
+
 
 # SELEÇÃO DE COR
 
@@ -351,6 +382,7 @@ class Example(Frame):
         self.fillCor = hx
         self.outline = hx
     
+
 # SELEÇÃO DE ESPESSURA DE LINHA
 
     def new_winEspessura(self): # new window definition
@@ -371,7 +403,9 @@ class Example(Frame):
     def onDefaultLinha(self):
         self.tamLinha = 1
 
+
 # FERRAMENTAS DE SEGMENTAÇÃO
+
     ##### THRESOLD #####
     def onthresold(self, event):
         valor = self.tkScale.get()
@@ -383,10 +417,12 @@ class Example(Frame):
 
     def onbarThre(self):
         newwin = Toplevel(self.master)
+        newwin.geometry('280x70')
         display = Label(newwin, text="THRESOLD")
-        self.tkScale = tkinter.Scale(newwin, from_=0, to=255, orient=tkinter.HORIZONTAL, command=self.onthresold)
+        self.tkScale = tkinter.Scale(newwin, from_=0, to=255, orient=tkinter.HORIZONTAL, length=200, command=self.onthresold)
         self.tkScale.pack(anchor=tkinter.CENTER)
         display.pack() 
+
 
     ##### WATERSHED #####
     def aplicarNot(self):
@@ -419,13 +455,11 @@ class Example(Frame):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.sure_fg))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
-
     def onRegioes(self):        
         self.sure_fg = np.uint8(self.sure_fg)
         unknown = cv2.subtract(self.sure_bg, self.sure_fg)
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(unknown))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
 
     def onAplicarFinalW(self):
         img = self.cv_img.copy()
@@ -439,11 +473,8 @@ class Example(Frame):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
-
-
-
-
     def onWatershed(self):
+        # baseado em https://docs.opencv.org/master/d3/db4/tutorial_py_watershed.html
         if len(self.filepath) != 0: 
             self.kernel = np.ones((3,3),np.uint8)        
             self.gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
@@ -493,6 +524,35 @@ class Example(Frame):
             messagebox.showerror("Erro", "Para fazer esta ação é necessário carregar uma imagem.")
 
         
+# FERRAMENTAS DE SELÇÃO DE ÁREAS
+    # def avisoSelecao(self):
+    #     messagebox.showinfo("Aviso", "Clique novamente para parar de selecionar retângulos.")
+
+    def onSelectRetangulo(self):
+        if self.desenhar == 0:
+            # self.avisoSelecao()
+            self.desenhar = 1
+            self.desenho = 1
+            self.action = self.canvas.create_rectangle
+        else:
+            self.desenhar = 0
+            self.desenho = 0
+    
+    def onCortarArea(self):
+        # self.canvas.itemconfig(self.listObj[-1], fill="white", outline="white")
+        if len(self.filepath) != 0: 
+            xbegin, ybegin, xend, yend = map(int, self.canvas.coords(self.listObj[-1]))
+            self.canvas.delete(self.listObj[-1])
+            print(xbegin, ybegin, xend, yend)
+            imgAlterada = self.cv_img[ybegin:yend, xbegin:xend]
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgAlterada))
+            self.Im_height, self.Im_width, self.canais = imgAlterada.shape
+            self.canvas.config(width = self.Im_width, height = self.Im_height)
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        else:
+            messagebox.showerror("Error", "Não tem imagem a ser cortada")
+    
+            
 
 
 def main():
