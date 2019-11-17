@@ -50,6 +50,7 @@ class Example(Frame):
         self.S = IntVar()
         self.V = IntVar()
         self.mostrarUmavez = 0
+        self.VarFiltroMedia = IntVar()
                     
         self.initMenu()      
 
@@ -76,7 +77,8 @@ class Example(Frame):
         self.linhaMenu = Menu(self.master, tearoff=0)
         self.segmentacaoMenu = Menu(self.master, tearoff=0)
         self.selecaoAreasMenu = Menu(self.master, tearoff=0)
-        self.correcaoDeCores = Menu(self.master, tearoff=0)
+        self.correcaoDeCoresMenu = Menu(self.master, tearoff=0)
+        self.filtrosMenu = Menu(self.master, tearoff=0)
          
 
         # Adicionar comando
@@ -110,7 +112,15 @@ class Example(Frame):
         self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
         self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
                 
-        self.correcaoDeCores.add_command(label="Historgrama", command=self.onHistogramaEq)
+        self.correcaoDeCoresMenu.add_command(label="Historgrama", command=self.onHistogramaEq)
+
+        # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
+        # self.filtrosMenu.add_command(label="IFFT", command=self.onHistogramaEq)
+        self.filtrosMenu.add_command(label="Realcar com Media", command=self.filterRealceMedia)
+        self.filtrosMenu.add_command(label="Aplicar Media", command=self.filterMedia)
+        self.filtrosMenu.add_command(label="Aplicar Gaussiana", command=self.filterGauss)
+        self.filtrosMenu.add_command(label="Imagem Original", command=self.onVoltarOriginal)
+        
 
         # Mostrar os menus
         self.menubar.add_cascade(label= "Arquivo", menu=self.fileMenu)
@@ -118,9 +128,8 @@ class Example(Frame):
         self.menubar.add_cascade(label= "Ferramentas", menu = self.ferramentaMenu)
         self.menubar.add_cascade(label= "Segmentação", menu = self.segmentacaoMenu)
         self.menubar.add_cascade(label= "Seleção Áreas", menu = self.selecaoAreasMenu)
-        # self.menubar.add_cascade(label= "Colorização", menu = self.selecaoAreasMenu)
-        self.menubar.add_cascade(label= "Correção Cor", menu = self.correcaoDeCores)
-        self.menubar.add_cascade(label= "Filtros", menu = self.selecaoAreasMenu)
+        self.menubar.add_cascade(label= "Correção Cor", menu = self.correcaoDeCoresMenu)
+        self.menubar.add_cascade(label= "Filtros", menu = self.filtrosMenu)
 
 
         self.ferramentaMenu.add_cascade(label= "Desenho", menu = self.desenhoMenu)
@@ -139,6 +148,7 @@ class Example(Frame):
 
         if len(self.filepath) != 0:            
             self.cv_img = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_BGR2RGB)
+            self.cv_img_default = self.cv_img.copy()
             self.Im_height, self.Im_width, self.canais = self.cv_img.shape
             self.master.geometry(str(self.Im_width)+'x'+str(self.Im_height)+'+300+100')
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
@@ -564,7 +574,99 @@ class Example(Frame):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_equalizada))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
+
+# FERRAMENTAS DE REALCE
+    # FFT
+    # def onFFT(self):
+    #     if len(self.filepath) != 0: 
+    #         gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
+    #         fftImg = np.fft.fft2(gray)
+    #         fftImg = np.log(np.abs(fftImg)+1)
+    #         self.photo = ImageTk.PhotoImage(image = Image.fromarray(fftImg))
+    #         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    # IFFT
+
+    # REALCE USANDO FILTRO DA MÉDIA
+    def onAplicarRealceMedia(self):
+        # avg_blur = cv2.blur(self.cv_img_default,(self.VarFiltroMedia,self.VarFiltroMedia))
+        # customBordas = cv2.subtract(self.cv_img_default, avg_blur)
+        self.cv_img = cv2.add(self.cv_img_default, self.customBordas)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onMediaRealce(self, event):
+        self.VarFiltroMedia =  self.tkScaleVM.get()
+        avg_blur = cv2.blur(self.cv_img_default,(self.VarFiltroMedia,self.VarFiltroMedia))
+        self.customBordas = cv2.subtract(self.cv_img_default, avg_blur)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.customBordas))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def filterRealceMedia(self):
+        if len(self.filepath) != 0: 
+            newwin = Toplevel(self.master)
+
+            lInst = Label(newwin, text="Escolha o tamanho do filtro da média")
+            self.tkScaleVM = tkinter.Scale(newwin, from_=1, to=20, orient=tkinter.HORIZONTAL, length=200, command=self.onMediaRealce)
+            bAplica = Button(newwin, text="Aplicar Realce das bordas", command=self.onAplicarRealceMedia)
+            
+            lInst.pack()
+            self.tkScaleVM.pack()
+            bAplica.pack()
+
+    # APLICAR O FILTRO DA MÉDIA (BORRAR)
+    def onMedia(self, event):
+        self.VarFiltroMedia = self.tkScaleM.get()
+        self.cv_img = cv2.blur(self.cv_img_default,(self.VarFiltroMedia,self.VarFiltroMedia))
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def filterMedia(self):
+        if len(self.filepath) != 0: 
+            newwin = Toplevel(self.master)
+
+            lInst = Label(newwin, text="Escolha o tamanho do filtro da média")
+            self.tkScaleM = tkinter.Scale(newwin, from_=1, to=10, orient=tkinter.HORIZONTAL, length=200, command=self.onMedia)            
+
+            lInst.pack()
+            self.tkScaleM.pack()
+
+    # APLICAR O FILTRO DA GAUSSIANA (BORRAR)
+    def onGaussiana(self, event):
+        self.VarFiltroMedia = self.tkScaleG.get()
+        if self.VarFiltroMedia % 2 == 1:
+            self.cv_img = cv2.GaussianBlur(self.cv_img_default,(self.VarFiltroMedia,self.VarFiltroMedia),1)
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def filterGauss(self):
+        if len(self.filepath) != 0: 
+            newwin = Toplevel(self.master)
+
+            lInst = Label(newwin, text="Escolha o tamanho do filtro da média")
+            self.tkScaleG = tkinter.Scale(newwin, from_=1, to=10, orient=tkinter.HORIZONTAL, length=200, command=self.onGaussiana)
+
+            lInst.pack()
+            self.tkScaleG.pack()
+
+
+
+
+    # VOLTAR AO ORIGINAL
+    def onVoltarOriginal(self):
+        self.cv_img = self.cv_img_default.copy()
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+            
     
+
+
+
+
 def main():
     root = Tk()
     ex = Example()
