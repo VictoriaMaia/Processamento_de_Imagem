@@ -1,4 +1,4 @@
-from tkinter import Tk, BOTH, Frame, Menu, Button, filedialog, Label, messagebox, colorchooser, Toplevel
+from tkinter import Tk, BOTH, Frame, Menu, Button, filedialog, Label, messagebox, colorchooser, Toplevel, Radiobutton
 from tkinter import Checkbutton, IntVar
 from tkinter import LEFT, TOP, X, FLAT, RAISED, W
 import tkinter
@@ -51,6 +51,7 @@ class Example(Frame):
         self.V = IntVar()
         self.mostrarUmavez = 0
         self.VarFiltroMedia = IntVar()
+        # self.ListaAlteracoesDesfeitas = []
                     
         self.initMenu()      
 
@@ -79,6 +80,7 @@ class Example(Frame):
         self.selecaoAreasMenu = Menu(self.master, tearoff=0)
         self.correcaoDeCoresMenu = Menu(self.master, tearoff=0)
         self.filtrosMenu = Menu(self.master, tearoff=0)
+        self.desfazerMenu = Menu(self.master, tearoff=0)
          
 
         # Adicionar comando
@@ -89,38 +91,39 @@ class Example(Frame):
         
         self.visualizarMenu.add_command(label="RGB", command=self.onRGB)
         self.visualizarMenu.add_command(label="HSV", command=self.onHSV)
-        self.visualizarMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
+        # self.visualizarMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
 
-        self.desenhoMenu.add_command(label="Desenhar", command=self.onDesenhar)
-        self.desenhoMenu.add_command(label="Circulo", command=self.onDesenharCir) 
-        self.desenhoMenu.add_command(label="Quadrado", command=self.onDesenharQuadrado) 
-        self.desenhoMenu.add_command(label="Linha", command=self.onDesenharLinha) 
-        self.desenhoMenu.add_command(label="Linha Tracejada", command=self.onDesenharLinhaTrac) 
+        # self.desenhoMenu.add_command(label="Desenhar", command=self.onDesenhar)
+        # self.desenhoMenu.add_command(label="Circulo", command=self.onDesenharCir) 
+        # self.desenhoMenu.add_command(label="Quadrado", command=self.onDesenharQuadrado) 
+        # self.desenhoMenu.add_command(label="Linha", command=self.onDesenharLinha) 
+        # self.desenhoMenu.add_command(label="Linha Tracejada", command=self.onDesenharLinhaTrac) 
         
-        self.corMenu.add_command(label="Contorno", command=self.onEscolherCor_Contorno)
-        self.corMenu.add_command(label="Preenchimento", command=self.onEscolherCor_Preencher)
-        self.corMenu.add_command(label="Contorno e Preenchimento", command=self.onPreen_Contor)
-        self.corMenu.add_command(label="Default", command=self.onDefault)
+        # self.corMenu.add_command(label="Contorno", command=self.onEscolherCor_Contorno)
+        # self.corMenu.add_command(label="Preenchimento", command=self.onEscolherCor_Preencher)
+        # self.corMenu.add_command(label="Contorno e Preenchimento", command=self.onPreen_Contor)
+        # self.corMenu.add_command(label="Default", command=self.onDefault)
 
-        self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
-        self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
+        # self.linhaMenu.add_command(label="Espessura", command=self.new_winEspessura)
+        # self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
 
-        self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
-        self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
-        self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
+        # self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
+        # self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
+        # self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
 
-        self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
-        self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
-                
-        self.correcaoDeCoresMenu.add_command(label="Historgrama", command=self.onHistogramaEq)
+        # self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
+        # self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
+        ## Colocar para ver o histograma 
+        # self.correcaoDeCoresMenu.add_command(label="Historgrama", command=self.onHistogramaEq)
 
-        # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
-        # self.filtrosMenu.add_command(label="IFFT", command=self.onHistogramaEq)
-        self.filtrosMenu.add_command(label="Realcar com Media", command=self.filterRealceMedia)
-        self.filtrosMenu.add_command(label="Aplicar Media", command=self.filterMedia)
-        self.filtrosMenu.add_command(label="Aplicar Gaussiana", command=self.filterGauss)
-        self.filtrosMenu.add_command(label="Imagem Original", command=self.onVoltarOriginal)
+        # # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
+        # # self.filtrosMenu.add_command(label="IFFT", command=self.onHistogramaEq)
+        # self.filtrosMenu.add_command(label="Realcar com Media", command=self.filterRealceMedia)
+        # self.filtrosMenu.add_command(label="Aplicar Media", command=self.filterMedia)
+        # self.filtrosMenu.add_command(label="Aplicar Gaussiana", command=self.filterGauss)
+        # # self.filtrosMenu.add_command(label="Imagem Original", command=self.onVoltarOriginal)
         
+        self.desfazerMenu.add_command(label="Desfazer ação", command=self.onDesfazer)
 
         # Mostrar os menus
         self.menubar.add_cascade(label= "Arquivo", menu=self.fileMenu)
@@ -130,6 +133,7 @@ class Example(Frame):
         self.menubar.add_cascade(label= "Seleção Áreas", menu = self.selecaoAreasMenu)
         self.menubar.add_cascade(label= "Correção Cor", menu = self.correcaoDeCoresMenu)
         self.menubar.add_cascade(label= "Filtros", menu = self.filtrosMenu)
+        self.menubar.add_cascade(label= "Desfazer", menu = self.desfazerMenu)
 
 
         self.ferramentaMenu.add_cascade(label= "Desenho", menu = self.desenhoMenu)
@@ -137,6 +141,7 @@ class Example(Frame):
         self.ferramentaMenu.add_cascade(label= "Linha", menu = self.linhaMenu)
 
         
+
         self.master.config(menu=self.menubar)
 
 # FUNÇÕES INICIAIS
@@ -146,14 +151,16 @@ class Example(Frame):
     def onOpen(self):
         self.filepath = filedialog.askopenfilename(filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
 
-        if len(self.filepath) != 0:            
+        if len(self.filepath) != 0: 
+            self.ListaAlteracoesFeitas = []
             self.cv_img = cv2.cvtColor(cv2.imread(self.filepath), cv2.COLOR_BGR2RGB)
-            self.cv_img_default = self.cv_img.copy()
+            self.ListaAlteracoesFeitas.append(self.cv_img.copy())
             self.Im_height, self.Im_width, self.canais = self.cv_img.shape
             self.master.geometry(str(self.Im_width)+'x'+str(self.Im_height)+'+300+100')
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.config(width = self.Im_width, height = self.Im_height)
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+            
 
     def onSave(self):
         if len(self.filepath) != 0:
@@ -188,122 +195,139 @@ class Example(Frame):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
         os.remove("new_img"+self.filepath[-4: ])
+
+# FUNÇÕES DE BACKUP
+
+    def onSalvarAlterações(self):
+        self.ListaAlteracoesFeitas.append(self.cv_img.copy())
+
+    def onDesfazer(self):
+        if len(self.ListaAlteracoesFeitas) > 1:
+            self.ListaAlteracoesFeitas.pop()
+            self.cv_img = self.ListaAlteracoesFeitas[-1]
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        elif len(self.ListaAlteracoesFeitas) == 1:
+            self.cv_img = self.ListaAlteracoesFeitas[0]
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
             
+        
+
 
 # FUNÇÕES DE VISUALIZAR RGB
 
-    def onDefaultRGBHSV(self):
-        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    # def onDefaultRGBHSV(self):
+    #     self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[0]))
+    #     self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
     def oncanaisRGB(self):
         if len(self.filepath) != 0:
-            imgCopy = self.cv_img.copy()
+            self.imgCopy = self.ListaAlteracoesFeitas[-1].copy()
+
             if (self.R.get() and self.G.get() == 0 and self.B.get() == 0): #apenas canal vermelho
-                imgCopy[:,:,1] = 0
-                imgCopy[:,:,2] = 0                
+                self.imgCopy[:,:,1] = 0
+                self.imgCopy[:,:,2] = 0                
 
             elif (self.G.get() and self.R.get() == 0 and self.B.get() == 0): #apenas canal verde
-                imgCopy[:,:,0] = 0
-                imgCopy[:,:,2] = 0  
+                self.imgCopy[:,:,0] = 0
+                self.imgCopy[:,:,2] = 0  
 
             elif (self.B.get() and self.R.get() == 0 and self.G.get() == 0): #apenas canal azul
-                imgCopy[:,:,0] = 0
-                imgCopy[:,:,1] = 0  
+                self.imgCopy[:,:,0] = 0
+                self.imgCopy[:,:,1] = 0  
             
             elif (self.B.get() and self. R.get() and self.G.get() == 0): #apenas canal azul e vermelho
-                imgCopy[:,:,1] = 0 
+                self.imgCopy[:,:,1] = 0 
             
             elif (self.B.get() and self.G.get() and self.R.get() == 0): #apenas canal azul e verde
-                imgCopy[:,:,0] = 0 
+                self.imgCopy[:,:,0] = 0 
             
             elif (self.R.get() and self.G.get() and self.B.get() == 0): #apenas canal vermelho e verde
-                imgCopy[:,:,2] = 0 
+                self.imgCopy[:,:,2] = 0 
                         
             elif (self.R.get() == 0 and self.G.get() == 0 and self.B.get() == 0): #apagou geral
-                imgCopy[:,:,0] = 0
-                imgCopy[:,:,1] = 0  
-                imgCopy[:,:,2] = 0  
+                self.imgCopy[:,:,0] = 0
+                self.imgCopy[:,:,1] = 0  
+                self.imgCopy[:,:,2] = 0  
             
             elif (self.R.get() and self.G.get() and self.B.get()): #Tudo
-                self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
+                self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.imgCopy))
                 self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)    
                 return
                 
-            
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.imgCopy))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        
+            
+
+    def salvarRGB(self):
+        self.cv_img = self.imgCopy.copy()
+        self.onSalvarAlterações()
+
+    def onFecharNewWindow(self):
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        self.newwin.destroy()
 
     def onRGB(self):
-        newwin = Toplevel(self.master)
-        newwin.geometry('200x100')
-        cR = Checkbutton(newwin, text="Canal R", variable=self.R, command=self.cRGB)
-        cG = Checkbutton(newwin, text="Canal G", variable=self.G, command=self.cRGB)
-        cB = Checkbutton(newwin, text="Canal B", variable=self.B, command=self.cRGB)
-        cR.pack()
-        cG.pack()
-        cB.pack()
+        try:
+            a,b,c = self.ListaAlteracoesFeitas[-1].shape
+            self.newwin = Toplevel(self.master)
+            self.newwin.geometry('200x100')
+            cR = Checkbutton(self.newwin, text="Canal R", variable=self.R, command=self.oncanaisRGB)
+            cG = Checkbutton(self.newwin, text="Canal G", variable=self.G, command=self.oncanaisRGB)
+            cB = Checkbutton(self.newwin, text="Canal B", variable=self.B, command=self.oncanaisRGB)
+            salvar = Button(self.newwin, text="Salvar alterações", command=self.salvarRGB)
+            fechar = Button(self.newwin, text="Fechar", command=self.onFecharNewWindow)
+
+            cR.pack()
+            cG.pack()
+            cB.pack()
+            salvar.pack()
+            fechar.pack()
+        except:
+            messagebox.showerror("Error", "Imagem não tem 3 canais")
     
-    def cRGB(self):
-        self.oncanaisRGB()
 
+# FUNÇÕES DE VISUALIZAR HSV 
 
-# FUNÇÕES DE VISUALIZAR HSV
+    def cHsv(self):
+        self.cv_img = self.img_h
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW) 
 
-    def oncanaisHSV(self):
-        if len(self.filepath) != 0:
-            imgCopy = self.cv_img.copy()
-            imgCopy = cv2.cvtColor(imgCopy, cv2.COLOR_RGB2HSV)
+    def chSv(self):
+        self.cv_img = self.img_s
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW) 
 
-            if (self.H.get() and self.S.get() == 0 and self.V.get() == 0): #apenas canal vermelho
-                imgCopy[:,:,1] = 0
-                imgCopy[:,:,2] = 0                
-
-            elif (self.S.get() and self.H.get() == 0 and self.V.get() == 0): #apenas canal verde
-                imgCopy[:,:,0] = 0
-                imgCopy[:,:,2] = 0  
-
-            elif (self.V.get() and self.H.get() == 0 and self.S.get() == 0): #apenas canal azul
-                imgCopy[:,:,0] = 0
-                imgCopy[:,:,1] = 0  
-            
-            elif (self.V.get() and self. R.get() and self.S.get() == 0): #apenas canal azul e vermelho
-                imgCopy[:,:,1] = 0 
-            
-            elif (self.V.get() and self.S.get() and self.H.get() == 0): #apenas canal azul e verde
-                imgCopy[:,:,0] = 0 
-            
-            elif (self.H.get() and self.S.get() and self.V.get() == 0): #apenas canal vermelho e verde
-                imgCopy[:,:,2] = 0 
-                        
-            elif (self.H.get() == 0 and self.S.get() == 0 and self.V.get() == 0): #apagou geral
-                imgCopy[:,:,0] = 0
-                imgCopy[:,:,1] = 0  
-                imgCopy[:,:,2] = 0  
-            
-            elif (self.H.get() and self.S.get() and self.V.get()): #Tudo
-                self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
-                self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)    
-                return
-                
-            
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgCopy))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    def chsV(self):
+        self.cv_img = self.img_v
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW) 
 
     def onHSV(self):
-        newwin = Toplevel(self.master)
-        newwin.geometry('200x100')
-        cH = Checkbutton(newwin, text="Canal H", variable=self.H, command=self.cHSV)
-        cS = Checkbutton(newwin, text="Canal S", variable=self.S, command=self.cHSV)
-        cV = Checkbutton(newwin, text="Canal V", variable=self.V, command=self.cHSV)
-        cH.pack()
-        cS.pack()
-        cV.pack()
+        if len(self.filepath) != 0:
+            imgCopy = self.ListaAlteracoesFeitas[-1].copy()
+            imgCopy = cv2.cvtColor(imgCopy, cv2.COLOR_RGB2HSV)
+            self.img_h, self.img_s, self.img_v = cv2.split(imgCopy)
+
+            self.newwin = Toplevel(self.master)
+            self.newwin.geometry('200x100')
+            cH = Radiobutton(self.newwin, text="Canal H", value=1, command=self.cHsv)
+            cS = Radiobutton(self.newwin, text="Canal S", value=2, command=self.chSv)
+            cV = Radiobutton(self.newwin, text="Canal V", value=3, command=self.chsV)
+            salvar = Button(self.newwin, text="Salvar alterações", command=self.onSalvarAlterações)
+            fechar = Button(self.newwin, text="Fechar", command=self.onFecharNewWindow)
+
+            cH.pack()
+            cS.pack()
+            cV.pack()
+            salvar.pack()
+            fechar.pack()
     
-    def cHSV(self):
-        self.oncanaisHSV()
-
-
 # FUNÇÕES DE DESENHO
 
     def avisoDesenho(self):
@@ -421,9 +445,9 @@ class Example(Frame):
     def onthresold(self, event):
         valor = self.tkScale.get()
         if len(self.filepath) != 0: 
-            img_gray = cv2.cvtColor(self.cv_img, cv2.COLOR_BGR2GRAY) 
-            ret,im_thresh = cv2.threshold(img_gray ,valor, 255, cv2.THRESH_BINARY)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(im_thresh))
+            img_gray = cv2.cvtColor(self.cv_img_default, cv2.COLOR_BGR2GRAY) 
+            ret,self.cv_img = cv2.threshold(img_gray ,valor, 255, cv2.THRESH_BINARY)
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
     def onbarThre(self):
@@ -551,13 +575,15 @@ class Example(Frame):
     
     def onCortarArea(self):
         # self.canvas.itemconfig(self.listObj[-1], fill="white", outline="white")
-        if len(self.filepath) != 0: 
+        if len(self.filepath) != 0:             
             xbegin, ybegin, xend, yend = map(int, self.canvas.coords(self.listObj[-1]))
             self.canvas.delete(self.listObj[-1])
-            print(xbegin, ybegin, xend, yend)
-            imgAlterada = self.cv_img[ybegin:yend, xbegin:xend]
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(imgAlterada))
-            self.Im_height, self.Im_width, self.canais = imgAlterada.shape
+            # print(xbegin, ybegin, xend, yend)
+            self.cv_img = self.cv_img[ybegin:yend, xbegin:xend]
+            self.ListaAlteracoesFeitas.append(self.cv_img.copy())
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.Im_height, self.Im_width, self.canais = self.cv_img.shape
+            # print(self.Im_height, self.Im_width)
             self.canvas.config(width = self.Im_width, height = self.Im_height)
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
         else:
@@ -582,6 +608,7 @@ class Example(Frame):
     #         gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
     #         fftImg = np.fft.fft2(gray)
     #         fftImg = np.log(np.abs(fftImg)+1)
+    #         fftImg = fftImg/(np.max(fftImg)*255)
     #         self.photo = ImageTk.PhotoImage(image = Image.fromarray(fftImg))
     #         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
@@ -656,12 +683,13 @@ class Example(Frame):
 
 
     # VOLTAR AO ORIGINAL
-    def onVoltarOriginal(self):
-        self.cv_img = self.cv_img_default.copy()
-        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    # def onVoltarOriginal(self):
+    #     self.cv_img = self.cv_img_default.copy()
+    #     self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+    #     self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
 
             
+    
     
 
 
