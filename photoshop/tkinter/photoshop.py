@@ -10,6 +10,8 @@ import pyscreenshot as ImageGrab
 import time
 import os
 import numpy as np
+from PIL import ImagePalette
+from PIL import Image
 
 class Example(Frame):
 
@@ -112,6 +114,7 @@ class Example(Frame):
         
         ## Colocar para ver o histograma 
         self.correcaoDeCoresMenu.add_command(label="Historgrama", command=self.onHistogramaEq)
+        self.correcaoDeCoresMenu.add_command(label="Quantizacao", command=self.onQuantizar)
 
         # # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
         # # self.filtrosMenu.add_command(label="IFFT", command=self.onHistogramaEq)
@@ -212,7 +215,6 @@ class Example(Frame):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
         os.remove("new_img.png")
-
 
 
 # FUNÇÕES DE VISUALIZAR RGB
@@ -387,7 +389,7 @@ class Example(Frame):
         self.desenho = 1
         self.desenhoLinha = 2
     
-########################################################
+
 # PEGAR MOVIMENTOS DO MOUSE PARA DESENHO
 
     def onStart(self, event):
@@ -664,6 +666,12 @@ class Example(Frame):
     # IFFT
 
     # REALCE USANDO FILTRO DA MÉDIA
+    def onFecharNewWindowRealceM(self):
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        self.newwinRM.destroy()
+
+
     def onAplicarRealceMedia(self):
         self.cv_img = cv2.add(self.ListaAlteracoesFeitas[-1], self.customBordas)
         self.onSalvarAlterações()
@@ -679,18 +687,25 @@ class Example(Frame):
 
     def filterRealceMedia(self):
         if len(self.filepath) != 0: 
-            newwin = Toplevel(self.master)
+            self.newwinRM = Toplevel(self.master)
 
-            lInst = Label(newwin, text="Escolha o tamanho do filtro da média")
-            self.tkScaleVM = tkinter.Scale(newwin, from_=1, to=20, orient=tkinter.HORIZONTAL, length=200, command=self.onMediaRealce)
-            bAplica = Button(newwin, text="Aplicar Realce das bordas", command=self.onAplicarRealceMedia)
+            lInst = Label(self.newwinRM, text="Escolha o tamanho do filtro da média")
+            self.tkScaleVM = tkinter.Scale(self.newwinRM, from_=1, to=20, orient=tkinter.HORIZONTAL, length=200, command=self.onMediaRealce)
+            bAplica = Button(self.newwinRM, text="Aplicar Realce das bordas", command=self.onAplicarRealceMedia)
+            fechar = Button(self.newwinRM, text="Fechar", command=self.onFecharNewWindowRealceM)
             
             lInst.pack()
             self.tkScaleVM.pack()
             bAplica.pack()
+            fechar.pack()
     
 
     # APLICAR O FILTRO DA GAUSSIANA (BORRAR)
+    def onFecharNewWindowGauss(self):
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        self.newwinG.destroy()
+
     def onAplicar(self):
         self.cv_img = self.custom
         self.onSalvarAlterações()
@@ -706,17 +721,55 @@ class Example(Frame):
 
     def filterGauss(self):
         if len(self.filepath) != 0: 
-            newwin = Toplevel(self.master)
+            self.newwinG = Toplevel(self.master)
 
-            lInst = Label(newwin, text="Escolha o tamanho do filtro")
-            self.tkScaleG = tkinter.Scale(newwin, from_=1, to=10, orient=tkinter.HORIZONTAL, length=200, command=self.onGaussiana)
-            bAplica = Button(newwin, text="Aplicar filtro", command=self.onAplicar) 
-            
+            lInst = Label(self.newwinG, text="Escolha o tamanho do filtro")
+            self.tkScaleG = tkinter.Scale(self.newwinG, from_=1, to=10, orient=tkinter.HORIZONTAL, length=200, command=self.onGaussiana)
+            bAplica = Button(self.newwinG, text="Aplicar filtro", command=self.onAplicar) 
+            fechar = Button(self.newwinG, text="Fechar", command=self.onFecharNewWindowGauss)
+                        
             lInst.pack()
             self.tkScaleG.pack()
             bAplica.pack()
+            fechar.pack()
 
 
+# EXTRA QUANTIFICACAO DE COR
+    def onFecharNewWindowQuant(self):
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        self.newwinQ.destroy()
+
+    def SalvarQuantizacao(self):
+        self.cv_img = self.imgQ
+        self.onSalvarAlterações()
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onQuant(self):
+        self.VarCor = self.tkScaleCor.get()
+        im_pil = Image.fromarray(self.ListaAlteracoesFeitas[-1])
+        result = im_pil.convert('P', palette=Image.ADAPTIVE, colors=self.VarCor)
+        pil_image = result.convert('RGB') 
+        self.imgQ = np.array(pil_image)
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.imgQ))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    def onQuantizar(self):
+        if len(self.filepath) != 0: 
+            self.newwinQ = Toplevel(self.master)
+
+            lCor = Label(self.newwinQ, text="Escolha quantidade de cores")
+            self.tkScaleCor = tkinter.Scale(self.newwinQ, from_=2, to=255, orient=tkinter.HORIZONTAL, length=400)
+            bAplica = Button(self.newwinQ, text="Aplicar", command=self.onQuant)
+            bSalva = Button(self.newwinQ, text="Salvar", command=self.SalvarQuantizacao)
+            fechar = Button(self.newwinQ, text="Fechar", command=self.onFecharNewWindowQuant)
+            
+            lCor.pack()
+            self.tkScaleCor.pack()
+            bAplica.pack()
+            bSalva.pack()
+            fechar.pack()
 
 
 
