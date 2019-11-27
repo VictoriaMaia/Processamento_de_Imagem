@@ -9,6 +9,7 @@ import cv2
 import pyscreenshot as ImageGrab 
 import time
 import os
+import math
 import numpy as np
 from PIL import ImagePalette
 from PIL import Image
@@ -55,6 +56,8 @@ class Example(Frame):
         self.mostrarUmavez = 0
         self.VarFiltroMedia = IntVar()
         self.cortar = 0
+        self.TemFFT = 0
+        self.ListaAlteracoesFeitas = []
         # self.ListaAlteracoesDesfeitas = []
                     
         self.initMenu()      
@@ -112,12 +115,16 @@ class Example(Frame):
         self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
         self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
         
-        ## Colocar para ver o histograma 
-        self.correcaoDeCoresMenu.add_command(label="Historgrama", command=self.onHistogramaEq)
-        self.correcaoDeCoresMenu.add_command(label="Quantizacao", command=self.onQuantizar)
 
-        # # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
-        # # self.filtrosMenu.add_command(label="IFFT", command=self.onHistogramaEq)
+        self.correcaoDeCoresMenu.add_command(label="Historgrama", command=self.onHistogramaEq)
+        self.correcaoDeCoresMenu.add_command(label="Quantização", command=self.onQuantizar)
+        self.correcaoDeCoresMenu.add_command(label="Saturação", command=self.onSaturacao)
+        self.correcaoDeCoresMenu.add_command(label="Colorizar por indice", command=self.onColorizar)
+        self.correcaoDeCoresMenu.add_command(label="Balanço de branco", command=self.white_balance)
+        
+
+        self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
+        self.filtrosMenu.add_command(label="IFFT", command=self.onIFFT)
         self.filtrosMenu.add_command(label="Realcar com Media", command=self.filterRealceMedia)
         self.filtrosMenu.add_command(label="Aplicar Gaussiana", command=self.filterGauss)
         
@@ -182,13 +189,17 @@ class Example(Frame):
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)            
 
     def onSave(self):
-        if len(self.filepath) != 0:
+        if len(self.filepath) != 0 or len(self.ListaAlteracoesFeitas) != 0:
             filepathSave = filedialog.asksaveasfilename(initialdir = self.filepath, filetypes = (("jpeg files","*.jpg"), ("png files","*.png"), ("bmp files", "*.bmp")))
-            time.sleep(.5)            
-            box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
-            grab = ImageGrab.grab(bbox = box)
-            grab.save(filepathSave)
+            if len(filepathSave) != 0:
+                time.sleep(.5)            
+                box = (self.canvas.winfo_rootx(),self.canvas.winfo_rooty(),self.canvas.winfo_rootx()+self.Im_width, self.canvas.winfo_rooty()+self.Im_height)
+                grab = ImageGrab.grab(bbox = box)
+                grab.save(filepathSave)
         else:
+            print("salvando ", len(self.ListaAlteracoesFeitas))
+            print(len(self.ListaAlteracoesFeitas) == 0)
+            print(len(self.filepath) != 0)
             messagebox.showerror("Erro", "Não tem imagem para ser salva.")
 
     def onInfo(self):
@@ -390,7 +401,7 @@ class Example(Frame):
         self.desenhoLinha = 2
     
 
-# PEGAR MOVIMENTOS DO MOUSE PARA DESENHO
+    # PEGAR MOVIMENTOS DO MOUSE PARA DESENHO
 
     def onStart(self, event):
         if self.desenhar != 0: 
@@ -426,7 +437,7 @@ class Example(Frame):
             self.listObj.pop()
 
 
-# SELEÇÃO DE COR
+    # SELEÇÃO DE COR
 
     def onEscolherCor_Preencher(self):
         (_, hx) = colorchooser.askcolor()
@@ -446,7 +457,7 @@ class Example(Frame):
         self.outline = hx
     
 
-# SELEÇÃO DE ESPESSURA DE LINHA
+    # SELEÇÃO DE ESPESSURA DE LINHA
 
     def new_winEspessura(self): # new window definition
         newwin = Toplevel(self.master)
@@ -602,7 +613,7 @@ class Example(Frame):
                 messagebox.showerror("Erro", "Para fazer esta ação é necessário carregar uma imagem.")
 
         
-# FERRAMENTAS DE SELÇÃO DE ÁREAS
+# FERRAMENTAS DE SELEÇÃO DE ÁREAS
     def avisoSelecao(self):
         messagebox.showinfo("Aviso", "Clique novamente no botão para parar de selecionar retângulos.")
 
@@ -641,29 +652,196 @@ class Example(Frame):
     
 
 # FERRAMENTAS DE CORREÇÃO DE CORES
+    # Histograma
     def onHistogramaEq(self):
-        iB, iG, iR = cv2.split(self.ListaAlteracoesFeitas[-1])
-        bEq = cv2.equalizeHist(iB)
-        gEq = cv2.equalizeHist(iG)
-        rEq = cv2.equalizeHist(iR)
-        self.cv_img = cv2.merge((bEq, gEq, rEq))
-        self.onSalvarAlterações()
+        if (len(self.filepath) != 0) and (len(self.cv_img.shape) == 3): 
+            iB, iG, iR = cv2.split(self.ListaAlteracoesFeitas[-1])
+            bEq = cv2.equalizeHist(iB)
+            gEq = cv2.equalizeHist(iG)
+            rEq = cv2.equalizeHist(iR)
+            self.cv_img = cv2.merge((bEq, gEq, rEq))
+            self.onSalvarAlterações()
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    # Saturação
+    def onSaturacao(self):
+        if (len(self.filepath) != 0) and (len(self.cv_img.shape) == 3): 
+            img = cv2.cvtColor(self.cv_img, cv2.COLOR_RGB2HSV)
+            valor = 50
+            # valor = 100
+            for j in range(img.shape[1]):
+                for k in range(img.shape[0]):
+                    if img[k,j,1] + valor > 255:
+                        img[k,j,1] = 255
+                    else:
+                        img[k,j,1] = img[k,j,1] + valor
+            img[:,:,1] = cv2.equalizeHist(img[:,:,1])
+            self.cv_img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
+            self.onSalvarAlterações()
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    # Colorização por indice de cores
+    # Feito por Beatriz Precebes <be.precebes@gmail.com>
+    def onFecharNewWindowColring(self):
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        self.newwinCorloring.destroy()
+
+    def paletteInit(self):
+        r1 = self.tkScaleR1.get()
+        g1 = self.tkScaleG1.get()
+        b1 = self.tkScaleB1.get()
+        r2 = self.tkScaleR2.get()
+        g2 = self.tkScaleG2.get()
+        b2 = self.tkScaleB2.get()
+
+        b = np.linspace(b1, b2, 256)
+        g = np.linspace(g1, g2, 256)
+        r = np.linspace(r1, r2, 256)
+        
+        p1 = np.tile( b.reshape(256,1), 256 )
+        p2 = np.tile( g.reshape(256,1), 256 )
+        p3 = np.tile( r.reshape(256,1), 256 )
+        
+        p1 = np.uint8(p1)
+        p2 = np.uint8(p2)
+        p3 = np.uint8(p3)
+            
+        return np.dstack( (np.dstack( (p1,p2) ), p3) )
+                
+    def onAplicarColoring(self):
+        palette = self.paletteInit()
+        out = np.zeros( (self.Im_height, self.Im_width, 3) )
+        if (len(self.ListaAlteracoesFeitas[-1].shape) == 3):
+                self.cv_img = cv2.cvtColor(self.ListaAlteracoesFeitas[-1], cv2.COLOR_RGB2GRAY)
+                
+        for i in range(self.Im_height):
+            for j in range(self.Im_width):
+                out[i][j] = palette [ self.cv_img[i][j] ][0]
+
+        self.cv_img = np.uint8(out)
+        
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    
+    def onColorizar(self):
+        if len(self.filepath) != 0:         
+                self.newwinCorloring = Toplevel(self.master)
+                # self.newwinCorloring.geometry('280x120')
+                instrucoes = Label(self.newwinCorloring, text="Selecione os valores iniciais e finais de RGB para gerar a paleta de cores.")
+                Ri = Label(self.newwinCorloring, text="R inicial")
+                Gi = Label(self.newwinCorloring, text="G inicial")
+                Bi = Label(self.newwinCorloring, text="B inicial")
+                Rf = Label(self.newwinCorloring, text="R final")    
+                Gf = Label(self.newwinCorloring, text="G final")    
+                Bf = Label(self.newwinCorloring, text="B final")    
+                self.tkScaleR1 = tkinter.Scale(self.newwinCorloring, from_=0, to=255, orient=tkinter.HORIZONTAL, length=400)
+                self.tkScaleG1 = tkinter.Scale(self.newwinCorloring, from_=0, to=255, orient=tkinter.HORIZONTAL, length=400)
+                self.tkScaleB1 = tkinter.Scale(self.newwinCorloring, from_=0, to=255, orient=tkinter.HORIZONTAL, length=400)
+                self.tkScaleR2 = tkinter.Scale(self.newwinCorloring, from_=0, to=255, orient=tkinter.HORIZONTAL, length=400)
+                self.tkScaleG2 = tkinter.Scale(self.newwinCorloring, from_=0, to=255, orient=tkinter.HORIZONTAL, length=400)
+                self.tkScaleB2 = tkinter.Scale(self.newwinCorloring, from_=0, to=255, orient=tkinter.HORIZONTAL, length=400)
+                aplicar = Button(self.newwinCorloring, text="Aplicar", command=self.onAplicarColoring)
+                salvar = Button(self.newwinCorloring, text="Salvar", command=self.onSalvarAlterações)
+                fechar = Button(self.newwinCorloring, text="Fechar", command=self.onFecharNewWindowColring)
 
+                instrucoes.pack()    
+                Ri.pack()
+                self.tkScaleR1.pack()
+                Gi.pack()
+                self.tkScaleG1.pack()
+                Bi.pack()
+                self.tkScaleB1.pack()
+                Rf.pack()
+                self.tkScaleR2.pack()
+                Gf.pack()
+                self.tkScaleG2.pack()
+                Bf.pack()
+                self.tkScaleB2.pack()
+                aplicar.pack()
+                salvar.pack()
+                fechar.pack()
+
+    # Balanço de branco
+    # Feito por Beatriz Precebes <be.precebes@gmail.com>
+    def apply_mask(self, matrix, mask, fill_value):
+        masked = np.ma.array(matrix, mask=mask, fill_value=fill_value)
+        return masked.filled()
+
+    def apply_threshold(self, matrix, low_value, high_value):
+        low_mask = matrix < low_value
+        matrix = self.apply_mask(matrix, low_mask, low_value)
+
+        high_mask = matrix > high_value
+        matrix = self.apply_mask(matrix, high_mask, high_value)
+
+        return matrix
+
+    def white_balance(self):
+        img = self.ListaAlteracoesFeitas[-1].copy()
+        assert img.shape[2] == 3
+        # assert percent > 0 and percent < 100
+        percent = 1
+
+        half_percent = percent / 200.0
+
+        canais = cv2.split(img)
+
+        canais_out = []
+        for channel in canais:
+            assert len(channel.shape) == 2
+            
+            # Percentuais baixo e altos com base no percentual de entrada
+            h, w = channel.shape
+            vec_size = w * h
+            flat = channel.reshape(vec_size)
+
+            assert len(flat.shape) == 1
+
+            flat = np.sort(flat)
+
+            n_cols = flat.shape[0]
+
+            low_val  = flat[math.floor(n_cols * half_percent)]
+            high_val = flat[math.ceil( n_cols * (1.0 - half_percent))]
+
+            #print("Lowval: ", low_val)
+            #print("Highval: ", high_val)
+            
+            thresholded = self.apply_threshold(channel, low_val, high_val)
+            normalized = cv2.normalize(thresholded, thresholded.copy(), 0, 255, cv2.NORM_MINMAX)
+            canais_out.append(normalized)
+
+            self.cv_img = cv2.merge(canais_out)
+            self.onSalvarAlterações()
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        
 
 # FERRAMENTAS DE REALCE
     # FFT
-    # def onFFT(self):
-    #     if len(self.filepath) != 0: 
-    #         gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
-    #         fftImg = np.fft.fft2(gray)
-    #         fftImg = np.log(np.abs(fftImg)+1)
-    #         fftImg = fftImg/(np.max(fftImg)*255)
-    #         self.photo = ImageTk.PhotoImage(image = Image.fromarray(fftImg))
-    #         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    def onFFT(self):
+        if len(self.filepath) != 0: 
+            gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
+            f = np.fft.fft2(gray)
+            self.fshift = np.fft.fftshift(f)
+            magnitude_spectrum = 20*np.log(np.abs(self.fshift))
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(magnitude_spectrum))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+            self.TemFFT = 1
 
     # IFFT
+    def onIFFT(self):
+        if self.TemFFT: 
+            f_ishift = np.fft.ifftshift(self.fshift)
+            img_back = np.fft.ifft2(f_ishift)
+            img_back = np.abs(img_back)
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_back))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+            self.TemFFT = 0
+
 
     # REALCE USANDO FILTRO DA MÉDIA
     def onFecharNewWindowRealceM(self):
