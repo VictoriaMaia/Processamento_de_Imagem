@@ -13,6 +13,13 @@ import math
 import numpy as np
 from PIL import ImagePalette
 from PIL import Image
+from skimage.feature import peak_local_max
+from skimage.morphology import watershed
+from scipy import ndimage
+import argparse
+import imutils
+
+
 
 class Example(Frame):
 
@@ -59,6 +66,7 @@ class Example(Frame):
         self.cortar = 0
         self.TemFFT = 0
         self.ListaAlteracoesFeitas = []
+        self.fft = 0
         # self.ListaAlteracoesDesfeitas = []
                     
         self.initMenu()      
@@ -111,7 +119,7 @@ class Example(Frame):
 
         self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
         # self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
-        # self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
+        self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
 
         self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
         self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
@@ -519,103 +527,43 @@ class Example(Frame):
 
 
     ##### WATERSHED #####
-        def aplicarNot(self):
-            self.im_thresh = cv2.bitwise_not(self.im_thresh)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.im_thresh))
+        # Feito por Beatriz Precebes <be.precebes@gmail.com>
+    def onWatershed(self):            
+        if len(self.filepath) != 0: 
+            shifted = cv2.pyrMeanShiftFiltering(self.ListaAlteracoesFeitas[-1], 21, 51)
+            try:
+                shifted = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
+                thresh = cv2.threshold(shifted, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+            
+            except:
+                thresh = cv2.threshold(shifted, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+            
+            D = ndimage.distance_transform_edt(thresh)
+            localMax = peak_local_max(D, indices=False, min_distance=20,
+                labels=thresh)
+
+            markers = ndimage.label(localMax, structure=np.ones((3, 3)))[0]
+            labels = watershed(-D, markers, mask=thresh)
+
+            for label in np.unique(labels):
+                if label == 0:
+                    continue
+
+                mask = np.zeros(shifted.shape, dtype="uint8")
+                mask[labels == label] = 255
+
+                # Detectando os contornos
+                cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                cnts = imutils.grab_contours(cnts)
+                c = max(cnts, key=cv2.contourArea)
+
+                # Circundando o objeto
+                self.cv_img = cv2.drawContours(self.ListaAlteracoesFeitas[-1], cnts, -1, (0, 255, 0), 3)
+
+            self.onSalvarAlterações()
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onThresholdW(self, event):
-            valor = self.tkScaleThresold.get()        
-            ret, self.im_thresh = cv2.threshold(self.gray ,valor, 255, cv2.THRESH_BINARY)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.im_thresh))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onExtracaoRuido(self, event):
-            valor = self.tkScaleRuido.get()
-            self.opening = cv2.morphologyEx(self.im_thresh,cv2.MORPH_OPEN, self.kernel, iterations = valor)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.opening))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onDilata(self, event):
-            valor = self.tkScaleDilata.get()
-            self.sure_bg = cv2.dilate(self.opening, self.kernel,iterations=valor)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.sure_bg))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onErosao(self, event):
-            valor = self.tkScaleErosao.get()
-            dist_transform = cv2.distanceTransform(self.opening, cv2.DIST_L2, 5)
-            ret, self.sure_fg = cv2.threshold(dist_transform,valor, 255, 0)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.sure_fg))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onRegioes(self):        
-            self.sure_fg = np.uint8(self.sure_fg)
-            unknown = cv2.subtract(self.sure_bg, self.sure_fg)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(unknown))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onAplicarFinalW(self):
-            img = self.cv_img.copy()
-            ret, markers = cv2.connectedComponents(self.sure_fg)
-            markers = cv2.watershed(self.cv_img, markers)
-            markers = markers.astype(np.uint8)
-            ret, m2 = cv2.threshold(markers, 0, 255, cv2.THRESH_BINARY|cv2.THRESH_OTSU)
-            contours, hierarchy = cv2.findContours(m2, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)    
-            for c in contours:
-                cv2.drawContours(img, c, -1, (255, 0, 0), 2)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(img))
-            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-
-        def onWatershed(self):
-            # baseado em https://docs.opencv.org/master/d3/db4/tutorial_py_watershed.html
-            if len(self.filepath) != 0: 
-                self.kernel = np.ones((3,3),np.uint8)        
-                self.gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
-                self.im_thresh = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
-                self.opening = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
-
-                
-                newwin = Toplevel(self.master)
-
-                # Coisas que irão ter na nova janela!
-                lEtapa1 = Label(newwin, text="Etapa 1\nEscolher thresold.\nRealçando o objeto\nAviso: Se o fundo da imagem estiver branco clique em 'Aplicar NOT'")
-                self.tkScaleThresold = tkinter.Scale(newwin, from_=0, to=255, orient=tkinter.HORIZONTAL, length=200, command=self.onThresholdW)
-                bNOT = Checkbutton(newwin, text="Aplicar NOT", command=self.aplicarNot)
-                
-                lEtapa2 = Label(newwin, text="Etapa 2.\nExtrair área de interesse.") #erosao e dilatacao
-                lExtRuido = Label(newwin, text="Extração de ruído.\nEscolha o número de iterações para aplicar a extração.")
-                self.tkScaleRuido = tkinter.Scale(newwin, from_=0, to=200, orient=tkinter.HORIZONTAL, length=200, command=self.onExtracaoRuido)
-                lDilata = Label(newwin, text="Dilatação.\nEscolha o número de iterações para aplicar a dilatação.\nEsse passo é para separar o que de certeza não é o objeto.")
-                self.tkScaleDilata = tkinter.Scale(newwin, from_=0, to=200, orient=tkinter.HORIZONTAL, length=200, command=self.onDilata)
-
-                lEtapa3 = Label(newwin, text="Etapa 3.\nEncontrar regiões e aplicar o Watershed")
-                lErosao = Label(newwin, text="Erosão.\nEscolha o número de iterações para aplicar a erosão.\nEsse passo é para extrair a área do objeto.")
-                self.tkScaleErosao = tkinter.Scale(newwin, from_=0, to=50, orient=tkinter.HORIZONTAL, length=200, command=self.onErosao)
-                lRegioes = Label(newwin, text="Ver as regiões encontradas com as operações feitas!\nQuando não quiser mais mudar clique no botão para aplicar o Watershed.")
-                bRegioes = Button(newwin, text="Regiões", command=self.onRegioes)
-                bWatershed = Button(newwin, text="Aplicar Watershed", command=self.onAplicarFinalW)
-                
-                
-                # ordem de aparição!
-                lEtapa1.pack()
-                self.tkScaleThresold.pack()
-                bNOT.pack()
-
-                lEtapa2.pack()
-                lExtRuido.pack()
-                self.tkScaleRuido.pack()
-                lDilata.pack()
-                self.tkScaleDilata.pack()
-
-                lEtapa3.pack()
-                lErosao.pack()
-                self.tkScaleErosao.pack()
-                lRegioes.pack()
-                bRegioes.pack()
-                bWatershed.pack()
-            else:
-                messagebox.showerror("Erro", "Para fazer esta ação é necessário carregar uma imagem.")
 
         
 # FERRAMENTAS DE SELEÇÃO DE ÁREAS
