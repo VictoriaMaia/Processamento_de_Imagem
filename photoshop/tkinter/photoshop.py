@@ -43,6 +43,7 @@ class Example(Frame):
         self.trace = 0
         self.listObj = []
         self.ObjCorte = []
+        self.ObjFFT = []
         self.objectId = 0
         self.fillCor = ""
         self.outline = "black"
@@ -123,8 +124,10 @@ class Example(Frame):
         self.correcaoDeCoresMenu.add_command(label="Balanço de branco", command=self.white_balance)
         
 
-        self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
-        self.filtrosMenu.add_command(label="IFFT", command=self.onIFFT)
+        # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
+        # self.filtrosMenu.add_command(label="IFFT", command=self.onIFFT)
+        self.filtrosMenu.add_command(label="Filtro em Frequencia", command=self.filterFrequencia)
+        
         self.filtrosMenu.add_command(label="Realcar com Media", command=self.filterRealceMedia)
         self.filtrosMenu.add_command(label="Aplicar Gaussiana", command=self.filterGauss)
         
@@ -428,6 +431,8 @@ class Example(Frame):
             if(self.objectId != 0):
                 if self.cortar == 1:
                     self.ObjCorte.append(self.objectId)
+                elif self.fft == 1:
+                    self.ObjFFT.append(self.objectId)
                 else:
                     self.listObj.append(self.objectId)
         
@@ -820,14 +825,18 @@ class Example(Frame):
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
         
 
-# FERRAMENTAS DE REALCE
+# FERRAMENTAS DE REALCE (FILTROS)
     # FFT
     def onFFT(self):
         if len(self.filepath) != 0: 
-            gray = cv2.cvtColor(self.cv_img,cv2.COLOR_BGR2GRAY)
-            f = np.fft.fft2(gray)
-            self.fshift = np.fft.fftshift(f)
-            magnitude_spectrum = 20*np.log(np.abs(self.fshift))
+            try:
+                gray = cv2.cvtColor(self.ListaAlteracoesFeitas[-1],cv2.COLOR_BGR2GRAY)
+                f = np.fft.fft2(gray)
+            except:                
+                f = np.fft.fft2(self.ListaAlteracoesFeitas[-1])
+
+            self.cv_img = np.fft.fftshift(f)
+            magnitude_spectrum = 20*np.log(np.abs(self.cv_img))
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(magnitude_spectrum))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
             self.TemFFT = 1
@@ -835,12 +844,64 @@ class Example(Frame):
     # IFFT
     def onIFFT(self):
         if self.TemFFT: 
-            f_ishift = np.fft.ifftshift(self.fshift)
+            f_ishift = np.fft.ifftshift(self.cv_img)
             img_back = np.fft.ifft2(f_ishift)
-            img_back = np.abs(img_back)
-            self.photo = ImageTk.PhotoImage(image = Image.fromarray(img_back))
+            self.cv_img = np.abs(img_back)
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
             self.TemFFT = 0
+    
+    # FREQUENCIA
+    def onAplicarFiltroFreq(self):
+        # self.onIFFT()
+        for i in range(0,len(self.ObjFFT)):
+            xbegin, ybegin, xend, yend = map(int, self.canvas.coords(self.ObjFFT[-1]))
+            self.cv_img[ybegin:yend, xbegin:xend] = 0.0
+            self.canvas.delete(self.ObjFFT[-1])
+            self.ObjFFT.pop()
+        
+        self.onIFFT()
+        
+    def onVoltarFiltroFreq(self):
+        self.onFFT()
+
+    def onSalvarFiltroFreq(self):
+        self.onSalvarAlterações()
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+
+    def onFecharNewWindowFiltroFreq(self):
+        self.desenhar = 0
+        self.desenho = 0
+        self.fft = 0
+        self.onDefault()
+        self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        self.newwinFreq.destroy()
+
+    def filterFrequencia(self):
+        if len(self.filepath) != 0: 
+            self.desenhar = 1
+            self.desenho = 1
+            self.fft = 1
+            self.outline = "black"
+            self.fillCor = "black"
+            self.action = self.canvas.create_rectangle
+                
+            self.newwinFreq = Toplevel(self.master)
+            self.onFFT()
+            lInst = Label(self.newwinFreq, text="Selecione a área que deseje filtrar")
+            bAplica = Button(self.newwinFreq, text="Aplicar filtro", command=self.onAplicarFiltroFreq)
+            bfechar = Button(self.newwinFreq, text="Fechar", command=self.onFecharNewWindowFiltroFreq)
+            bsalvar = Button(self.newwinFreq, text="Salvar", command=self.onSalvarFiltroFreq)
+            bvoltar = Button(self.newwinFreq, text="Voltar", command=self.onVoltarFiltroFreq)
+            
+            lInst.pack()
+            bAplica.pack()
+            bvoltar.pack()
+            bsalvar.pack()
+            bfechar.pack()
 
 
     # REALCE USANDO FILTRO DA MÉDIA
