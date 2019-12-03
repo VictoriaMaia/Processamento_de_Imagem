@@ -68,7 +68,8 @@ class Example(Frame):
         self.TemFFT = 0
         self.ListaAlteracoesFeitas = []
         self.fft = 0
-        # self.ListaAlteracoesDesfeitas = []
+        self.sementes = 0
+        self.listaXY = []
                     
         self.initMenu()      
 
@@ -79,6 +80,7 @@ class Example(Frame):
         self.canvas.bind('<B1-Motion>',     self.onGrow) 
         self.canvas.bind('<ButtonPress-3>', self.onDelete)
         self.canvas.bind('<ButtonRelease-1>', self.onSabeIdObj)
+        self.canvas.bind('<Double-Button-1>', self.onSementes) 
         self.canvas.bind_all('<Control-z>', self.onDesfazer)
         
         self.pack()
@@ -121,6 +123,7 @@ class Example(Frame):
 
         self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
         self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
+        self.segmentacaoMenu.add_command(label="Sementes", command=self.onSementesAtivar)
 
         self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
         self.selecaoAreasMenu.add_command(label="Cortar área", command=self.onCortarArea)
@@ -528,7 +531,7 @@ class Example(Frame):
 
 
     ##### WATERSHED #####
-        # Feito por Beatriz Precebes <be.precebes@gmail.com>
+    # Feito por Beatriz Precebes <be.precebes@gmail.com>
     def onWatershed(self):            
         if len(self.filepath) != 0: 
             shifted = cv2.pyrMeanShiftFiltering(self.ListaAlteracoesFeitas[-1], 21, 51)
@@ -565,6 +568,103 @@ class Example(Frame):
             self.onSalvarAlterações()
             self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+
+    ##### SEMENTES #####
+    # Feito por Beatriz Precebes <be.precebes@gmail.com>
+    def get8n(self, x, y, shape):
+        out = []
+        x_max = shape[1]-1
+        y_max = shape[0]-1
+
+        #top left
+        x_out = min(max(x-1,0), x_max)
+        y_out = min(max(y-1,0), y_max)
+        out.append((x_out, y_out))
+
+        #top center
+        x_out = x
+        y_out = min(max(y-1,0), y_max)
+        out.append((x_out, y_out))
+
+        #top right
+        x_out = min(max(x+1,0), x_max)
+        y_out = min(max(y-1,0), y_max)
+        out.append((x_out, y_out))
+
+        #left
+        x_out = min(max(x-1,0), x_max)
+        y_out = y
+        out.append((x_out, y_out))
+
+        #right
+        x_out = min(max(x+1,0), x_max)
+        y_out = y
+        out.append((x_out, y_out))
+
+        #bottom left
+        x_out = min(max(x-1,0), x_max)
+        y_out = min(max(y+1,0), y_max)
+        out.append((x_out, y_out))
+
+        #bottom center
+        x_out = x
+        y_out = min(max(y+1,0), y_max)
+        out.append((x_out, y_out))
+
+        #bottom right
+        x_out = min(max(x+1,0), x_max)
+        y_out = min(max(y+1,0), y_max)
+        out.append((x_out, y_out))
+
+        return out
+
+
+    def region_growing(self, img, seed):
+        list = []
+        img_f = np.zeros_like(img)
+        list.append((seed[0], seed[1]))
+        processed = []
+        while(len(list) > 0):
+            pix = list[0]
+            img_f[pix[0], pix[1]] = 255
+            for coord in self.get8n(pix[0], pix[1], img.shape):
+                if img[coord[0], coord[1]] != 0:
+                    img_f[coord[0], coord[1]] = 255
+                    if not coord in processed:
+                        list.append(coord)
+                    processed.append(coord)
+            list.pop(0)
+        return img_f
+
+
+    
+    def onSementes(self, event):
+        if self.sementes:            
+            img_gray = cv2.cvtColor(self.ListaAlteracoesFeitas[-1], cv2.COLOR_BGR2GRAY) 
+            ret, img = cv2.threshold(img_gray, 128, 255, cv2.THRESH_BINARY)
+            self.cv_img = self.region_growing(img, (event.y, event.x))
+            self.onSalvarAlterações()
+            self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.cv_img))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+            self.sementes = 0
+    
+    def onSementesAtivar(self):
+        if len(self.filepath) != 0: 
+            self.sementes = 1
+            self.newwinTre = Toplevel(self.master)
+            self.newwinTre.geometry('280x120')
+            display = Label(self.newwinTre, text="THRESOLD")
+            self.tkScale = tkinter.Scale(self.newwinTre, from_=0, to=255, orient=tkinter.HORIZONTAL, length=200, command=self.onthresold)
+            salvar = Button(self.newwinTre, text="Salvar alterações", command=self.onSalvarAlterações)
+            fechar = Button(self.newwinTre, text="Fechar", command=self.onFecharNewWindowThre)
+            
+            display.pack() 
+            self.tkScale.pack(anchor=tkinter.CENTER)            
+            salvar.pack()
+            fechar.pack()
+        
+        
+
 
         
 # FERRAMENTAS DE SELEÇÃO DE ÁREAS
@@ -605,7 +705,6 @@ class Example(Frame):
         else:
             messagebox.showerror("Error", "Não tem imagem a ser cortada")
     
-
 # FERRAMENTAS DE CORREÇÃO DE CORES
     # Histograma
     def onHistogramaEq(self):
