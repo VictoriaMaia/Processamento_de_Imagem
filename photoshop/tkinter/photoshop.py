@@ -61,6 +61,7 @@ class Example(Frame):
         self.H = IntVar()
         self.S = IntVar()
         self.V = IntVar()
+        self.Desenhar = IntVar()
         self.mostrarUmavez = 0
         self.VarFiltroMedia = IntVar()
         self.cortar = 0
@@ -78,6 +79,7 @@ class Example(Frame):
         self.canvas.bind('<B1-Motion>',     self.onGrow) 
         self.canvas.bind('<ButtonPress-3>', self.onDelete)
         self.canvas.bind('<ButtonRelease-1>', self.onSabeIdObj)
+        self.canvas.bind_all('<Control-z>', self.onDesfazer)
         
         self.pack()
 
@@ -118,7 +120,6 @@ class Example(Frame):
         self.linhaMenu.add_command(label="Default", command=self.onDefaultLinha)
 
         self.segmentacaoMenu.add_command(label="Threshold", command=self.onbarThre)
-        # self.segmentacaoMenu.add_command(label="Default", command=self.onDefaultRGBHSV)
         self.segmentacaoMenu.add_command(label="Watershed", command=self.onWatershed)
 
         self.selecaoAreasMenu.add_command(label="Retângulo", command=self.onSelectRetangulo)
@@ -132,10 +133,7 @@ class Example(Frame):
         self.correcaoDeCoresMenu.add_command(label="Balanço de branco", command=self.white_balance)
         
 
-        # self.filtrosMenu.add_command(label="FFT", command=self.onFFT)
-        # self.filtrosMenu.add_command(label="IFFT", command=self.onIFFT)
         self.filtrosMenu.add_command(label="Filtro em Frequencia", command=self.filterFrequencia)
-        
         self.filtrosMenu.add_command(label="Realcar com Media", command=self.filterRealceMedia)
         self.filtrosMenu.add_command(label="Aplicar Gaussiana", command=self.filterGauss)
         
@@ -164,7 +162,7 @@ class Example(Frame):
         if len(self.filepath) != 0:
             self.ListaAlteracoesFeitas.append(self.cv_img.copy())
 
-    def onDesfazer(self):
+    def onDesfazer(self, event=""):
         if len(self.filepath) != 0:
             if len(self.ListaAlteracoesFeitas) > 1:
                 self.ListaAlteracoesFeitas.pop()
@@ -357,8 +355,11 @@ class Example(Frame):
 # FUNÇÕES DE DESENHO
 
     def onconfigDesenhos(self):
-        self.desenhar = 1    
-        self.cortar = 0 
+        if self.Desenhar.get():
+            self.desenhar = 1    
+            self.cortar = 0 
+        else:
+            self.desenhar = 0
             
     def salvarDesenho(self):
         self.desenhar = 0
@@ -377,7 +378,7 @@ class Example(Frame):
         if len(self.filepath) != 0:
             self.newwinDesenho = Toplevel(self.master)
             self.newwinDesenho.geometry('200x200')
-            D = Button(self.newwinDesenho, text="Desenhar", command=self.onconfigDesenhos)
+            D = Checkbutton(self.newwinDesenho, text="Desenhar", variable=self.Desenhar, command=self.onconfigDesenhos)
             circulo = Radiobutton(self.newwinDesenho, text="Circulo", value=1, command=self.onDesenharCir)
             quadrado = Radiobutton(self.newwinDesenho, text="Quadrado", value=2, command=self.onDesenharQuadrado)
             linha = Radiobutton(self.newwinDesenho, text="Linha", value=3, command=self.onDesenharLinha)
@@ -463,6 +464,7 @@ class Example(Frame):
     def onDefault(self):
         self.fillCor = ""
         self.outline = "black"
+        self.tamLinha = 2
     
     def onPreen_Contor(self):
         (_, hx) = colorchooser.askcolor()
@@ -490,7 +492,6 @@ class Example(Frame):
     def onDefaultLinha(self):
         self.tamLinha = 1
 
-# FALTA AJEITAR O WATERSHED
 # FERRAMENTAS DE SEGMENTAÇÃO
     ##### THRESOLD #####
     def onFecharNewWindowThre(self):
@@ -578,6 +579,7 @@ class Example(Frame):
             self.desenhar = 1
             self.desenho = 1
             self.cortar = 1
+            
             self.action = self.canvas.create_rectangle
         else:
             self.desenhar = 0
