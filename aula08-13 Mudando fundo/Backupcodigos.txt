@@ -1,0 +1,56 @@
+# import cv2
+# import numpy as np
+# import matplotlib.pyplot as plt
+
+# # Lendo imagem e convertendo para RGB
+# im = cv2.imread('vulcao.jpeg')
+# imgVulc = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+# im = cv2.imread('pessoa.jpg')
+# imgPess = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+# # Tamanho das imagens
+# # print("V: ", vulc.shape, "P: ", imgPess.shape)
+
+# # Redimensionar
+# dim = (imgPess.shape[1], imgPess.shape[0])
+# vulc = cv2.resize(imgVulc, dim)
+
+# # plt.imshow(vulc)
+# # plt.show()
+
+# # Separando os canais
+# imgP_b, imgP_g, imgP_r = cv2.split(imgPess)
+# # plt.figure(figsize=[15,15])
+# # plt.subplot(141), plt.imshow(imgP_b, 'gray')
+# # plt.subplot(142), plt.imshow(imgP_g, 'gray')
+# # plt.subplot(143), plt.imshow(imgP_r, 'gray')
+# # plt.subplot(144), plt.imshow(imgPess)
+
+# # plt.hist(imgP_g.ravel(), 256, [0,256])
+
+# # plt.show()
+
+# # Fazendo Thresold
+# ret,im_threshPessoa = cv2.threshold(imgP_g, 210, 255, cv2.THRESH_BINARY)
+# # plt.imshow(im_threshPessoa, 'gray');
+
+# imgV_b, imgV_g, imgV_r = cv2.split(vulc)
+# # plt.figure(figsize=[15,15])
+# # plt.subplot(141), plt.imshow(imgV_b, 'gray')
+# # plt.subplot(142), plt.imshow(imgV_g, 'gray')
+# # plt.subplot(143), plt.imshow(imgV_r, 'gray')
+# # plt.show()
+
+# mascara3C = cv2.merge((im_threshPessoa, im_threshPessoa, im_threshPessoa))
+# imagemFinalVulc = cv2.bitwise_and(mascara3C, vulc)
+# # plt.imshow(imagemFinalVulc, 'gray');
+
+# mascaraInversa3C = cv2.bitwise_not(mascara3C)
+# # plt.imshow(mascaraInversa3C, 'gray');
+# imagemFinalPes = cv2.bitwise_and(mascaraInversa3C, imgPess)
+# # plt.imshow(imagemFinalPes, 'gray');
+
+# imagemFinalzona = cv2.add(imagemFinalVulc, imagemFinalPes)
+# plt.figure(figsize=[15,15])
+# plt.imshow(imagemFinalzona, 'gray');
