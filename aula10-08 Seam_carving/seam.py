@@ -83,19 +83,20 @@ def executar(x):
     new_largura = cv2.getTrackbarPos('largura','image')
     new_altura = cv2.getTrackbarPos('altura','image')
     print(new_altura, new_largura)
-    
+    new = imagem.copy()
+
     if new_altura < imagem.shape[0]:
-        print("tenho que diminuir", imagem.shape[0]-new_altura)
+        # print("tenho que diminuir na altura", imagem.shape[0]-new_altura)
         interacoes = imagem.shape[0]-new_altura
-        new = seam_dimimuir(imagem, interacoes, 1)
+        new = seam_dimimuir(new, interacoes, 1)
     
     # if new_altura > imagem.shape[0]:
         # print("aumentando altura")
     
     if new_largura < imagem.shape[1]:
-        print("tenho que diminuir", imagem.shape[1]-new_largura)
+        # print("tenho que diminuir na largura", imagem.shape[1]-new_largura)
         interacoes = imagem.shape[1]-new_largura
-        new = seam_dimimuir(imagem, interacoes)        
+        new = seam_dimimuir(new, interacoes)        
         
 
     # if interacoes_largura > imagem.shape[1]:
@@ -103,9 +104,12 @@ def executar(x):
     cv2.imshow('image', new)
     return
 
-# global imagem
+
 
 filename = sys.argv[1]
+print("Selecione a altura e largura que deseja e mova a barra executar. Espere um pouco e verá o resultado")
+print("Esse programa só diminui a imagem!!")
+
 imagem = cv2.imread(filename, 0)
 
 altura = imagem.shape[0]

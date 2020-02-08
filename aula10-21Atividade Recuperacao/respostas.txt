@@ -1,0 +1,75 @@
+3.7)
+    [1,2,2]
+    [1,1,2]
+    [2,1,2]
+
+    intensidade : 1    |  2
+    nº pixels   : 4    |  5
+    probab.     :0.44  | 0.56
+    freq. Ac.   :0.44  |  1
+    255*F.Ac.   :112.2 | 255
+
+    Resultado da equalização:
+    [112.2,  255,   255]
+    [112.2,  112.2, 255]
+    [255  ,  112.2, 255]
+
+    intensidade :112.2 |  255
+    nº pixels   : 4    |  5
+    probab.     :0.44  | 0.56
+    freq. Ac.   :0.44  |  1
+    255*F.Ac.   :112.2 | 255
+
+    Refazendo todo o processo, os valores da frequência acumulada serão os mesmo, portanto o produto por 255 tem o mesmo resultado, obtendo o mesmo histograma equalizado.
+
+
+3.14)
+    Os histogramas das imagens borradas não continuariam iguais pois como a imagem 2 tem mais bordas o filtro da media iria distribuir uma maior quantidade de novos valores a ela.
+
+3.20)
+    a) 5x5
+    
+4.37)
+    a) Não tenho como prever
+
+6.6)
+    O preto e o branco ficam intactos nos três canais.
+    Como as cores estão no máximo de intensidade, a cor vermelha no canal R ficará branco, a cor verde no canal G ficará branco e a cor azul no canal B ficará branco
+
+    A cor amarela como esta perto em relação a valor das cores vermelha e verde, ela terá uma cor tendendo pro branco nos canais R e G e uma cor entre cinza e preto no canal B
+
+    A cor ciano como esta perto em relação a valor das cores azul e verde, ela terá uma cor tendendo pro branco nos canais B e G e uma cor entre cinza e preto no canal R
+
+    A cor magenta como esta perto em relação a valor das cores azul e vermelho, ela terá uma cor tendendo para branco nos canais R e B e uma cor entre cinza e preto no canal G
+
+
+6.8)
+    a) Assumindo a parte frontal o lado do cubo com cores avermelhadas, as cores variam de tonalidades cinza escuro no canal R nas cores próximas e iguais a vermelho, e tonalidades claras nos outros canais.
+
+    As cores tendendo pro azul, as cores variam de tonalidade cinza escuro no canal B e tonalidades claras nos outros canais.
+
+    E como não tem componentes verdes as cores ficam tendendo ao branco no canal G
+
+    b) Para converter a cor RGB para CMY:
+        C     1     R
+        M  =  1  -  G
+        Y     1     B
+
+        Utilizando o esquema de cubo de core RGB da página 265 do livro.
+
+        Preto   : RGB[000] -> CMY[111] Branco
+        Branco  : RGB[111] -> CMY[000] Preto
+        Azul    : RGB[001] -> CMY[110] Amarelo
+        Magenta : RGB[101] -> CMY[010] Verde
+        Vermelho: RGB[100] -> CMY[011] Ciano
+        Amarelo : RGB[110] -> CMY[001] Azul
+        Ciano   : RGB[011] -> CMY[100] Vermelho
+        Verde   : RGB[010] -> CMY[101] Magenta
+
+6.17) 
+    a) Pois como foi colocado a imagem d que tem valores altos no canal vermelho, o canal vermelho ficou com valores altos em relação aos outros canais. Fazendo assim predominar o vermelho.
+
+    b) Aumentar os valores do canal azul e diminuir os valores nos outros canais
+
+    c) Aumentar os valores no canal verde
+

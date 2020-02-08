@@ -497,6 +497,7 @@ class Example(Frame):
 
 # FERRAMENTAS DE SEGMENTAÇÃO
     ##### THRESOLD #####
+    
     def onFecharNewWindowThre(self):
         self.photo = ImageTk.PhotoImage(image = Image.fromarray(self.ListaAlteracoesFeitas[-1]))
         self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
@@ -618,6 +619,8 @@ class Example(Frame):
 
         return out
 
+    import numba
+    @numba.jit
 
     def region_growing(self, img, seed):
         list = []
@@ -762,8 +765,12 @@ class Example(Frame):
         p1 = np.uint8(p1)
         p2 = np.uint8(p2)
         p3 = np.uint8(p3)
-            
-        return np.dstack( (np.dstack( (p1,p2) ), p3) )
+        p = np.array(256,1,3) #!!!!!!!!!!!!!!!!!!!!!!!!
+        for i in range(256):
+            p[i,0,0] = p1[i]
+            p[i,0,1] = p2[i]
+            p[i,0,2] = p3[i]
+        return p#np.dstack( (np.dstack( (p1,p2) ), p3) )
                 
     def onAplicarColoring(self):
         palette = self.paletteInit()

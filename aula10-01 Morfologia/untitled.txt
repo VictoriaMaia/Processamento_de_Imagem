@@ -1,0 +1,8 @@
+-> desenhar
+-> 
+
+
+
+Leitor de braile
+
+Fazer barra do treshold
